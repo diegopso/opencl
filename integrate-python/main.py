@@ -23,16 +23,15 @@ d_a = cl.Buffer(context, mf.WRITE_ONLY, h_a.nbytes)
 # run kernel
 integrate = program.integrate
 integrate.set_scalar_arg_dtypes([None, numpy.uint32])
-integrate(queue, h_a.shape, None, d_a, N)
+integrate(queue, h_a.shape, h_a.shape, d_a, N)
 
 # return results
 cl.enqueue_copy(queue, h_a, d_a)
 
 sum = 0.0
-for i in range(N):
+for i in range(11):
 	sum += h_a[i]
 
 sum /= N
 
-#print(h_a)
 print(sum)
