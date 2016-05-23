@@ -8,7 +8,7 @@ __kernel void mmul(const unsigned int N, __global float *A,__global float  *B,  
 
 	float tmp;
 	/*Setup a work array for A in private memory*/
-	float awrk[1024];
+	float awrk[2048];
 
 	for (k = 0; k < N; k++) {
 		awrk[k] = A[i*N+k];
