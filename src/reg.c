@@ -20,9 +20,11 @@ int main(int argc, char *argv[])
     int i;
     
     int n = 5;
+	int outSize = 7;
     /* A, B, C, D, E */
     float p0[n], p1[n];
     int np[n];
+	float out[outSize];
 
     if (argc != 21) {
         fprintf(stderr, "Usage: %s M0 H0 T0 TAU A0 A1 NA B0 B1 NB "
@@ -103,8 +105,9 @@ int main(int argc, char *argv[])
     //Tamanho em bytes de cada vetor
     size_t bytes_p0 = sizeof(float) * n;
     size_t bytes_p1 = sizeof(float) * n;
-    size_t bytes_np = sizeof(float) * n;
+    size_t bytes_np = sizeof(int) * n;
     size_t bytes_opt = sizeof(float) * np[0];
+	size_t bytes_out = sizeof(float) * outSize;
     
     //Numero de workitems em cada local work group (local size)
     size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
@@ -114,20 +117,149 @@ int main(int argc, char *argv[])
         ceil((float)np[2] / (float)localSize[2])
     };
     
-    //
+    // Bind to platforms
+	clGetPlatformIDs(0, NULL, &platformCount);
+	if (platformCount == 0) {
+		printf("Error, cound not find any OpenCL platforms on the system.\n");
+		exit (2);
+	}
+	
+	platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
+	clGetPlatformIDs(platformCount,platforms, NULL);
+	
+	// Find first device that works
+	err = 1;
+	for (i = 0; i < platformCount && err !=CL_SUCCESS; i++) {
+		// Get ID for the device (CL_DEVICE_TYPE_ALL, CL_DEVICE_TYPE_GPU, ...)
+		err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
 
+	}
+	
+	if (err !=CL_SUCCESS) {
+		printf("Error, could not find a valid device.");
+		exit (3);
+	}
+	
+	err = clGetDeviceInfo(device_id, CL_DEVICE_NAME,MAX_DEVICE_NAME_SIZE, deviceName, NULL);
+	printf("Device: %s \n",deviceName);
+	
+	if (err !=CL_SUCCESS) {
+		printf("Error, could not read the info for device.");
+		exit (4);
+	}
+	
+	// Create a context
+	context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
+	
+	if (err !=CL_SUCCESS) {
+		printf("Error, could not create the context.");
+		exit (5);
+	}
+	
+	// Create a command queue
+	queue = clCreateCommandQueue(context, device_id, 0, &err);
+	
+	// Create the compute program from the source buffer
+	program = clCreateProgramWithSource(context, 1,
+			(const char **) & kernelSource,(const size_t *) &source_size, &err);
+			
+	if (err !=CL_SUCCESS) {
+		printf("Error, could not create program with source.");
+		exit (6);
+	}
+			
+	// Build the program executable
+	err = clBuildProgram(program, 0,NULL, NULL, NULL, NULL);
+	if (err == CL_BUILD_PROGRAM_FAILURE) {
+		cl_int logStatus;
+		char* buildLog = NULL;
+		size_t buildLogSize = 0;
+		logStatus = clGetProgramBuildInfo (program, device_id, CL_PROGRAM_BUILD_LOG, buildLogSize, buildLog, &buildLogSize);
+		buildLog = (char*)malloc(buildLogSize);
+		memset(buildLog, 0, buildLogSize);
+		logStatus = clGetProgramBuildInfo (program, device_id, CL_PROGRAM_BUILD_LOG, buildLogSize, buildLog, NULL);
+		printf("%s", buildLog);
+		free(buildLog);
+		return err;
+	} else if (err!=0) {
+		printf("Error, could not build program.");
+		exit (7);
+	}
+	
+	// Create the compute kernel in the program we wish to run
+	
+	kernel = clCreateKernel(program, "mmul", &err);
+	
+	if (err !=CL_SUCCESS) {
+		printf("Error, could not create the kernel.");
+		exit (6);
+	}
+	
+	// Create the input and output arrays in device memory for our calculation
+	d_p0 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p0, NULL, NULL);
+	d_p1 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p1, NULL, NULL);
+	d_np = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_np, NULL, NULL);
+	d_out = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_out, NULL, NULL);
+	
+	// Write our data set into the input array in device memory
+	err = clEnqueueWriteBuffer(queue, d_p0, CL_TRUE, 0, bytes_p0, p0, 0, NULL, NULL);
+	err = clEnqueueWriteBuffer(queue, d_p1, CL_TRUE, 0, bytes_p1, p1, 0, NULL, NULL);
+	err = clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL, NULL);
+	
+	// Set the arguments to our compute kernel
+	err |= clSetKernelArg(kernel, 0, sizeof(aperture_t), &ap);
+	err |= clSetKernelArg(kernel, 1, sizeof(float), &m0);
+	err |= clSetKernelArg(kernel, 2, sizeof(float), &h0);
+	err |= clSetKernelArg(kernel, 3, sizeof(float), &t0);
+	err |= clSetKernelArg(kernel, 4, sizeof(cl_mem), &d_p0);
+	err |= clSetKernelArg(kernel, 5, sizeof(cl_mem), &d_p1);
+	err |= clSetKernelArg(kernel, 6, sizeof(cl_mem), &d_np);
+	err |= clSetKernelArg(kernel, 7, sizeof(cl_mem), &d_out);
+	err |= clSetKernelArg(kernel, 8, np[0] * sizeof(cl_float), NULL);//_Aopt
+	err |= clSetKernelArg(kernel, 9, np[0] * sizeof(cl_float), NULL);//_Bopt
+	err |= clSetKernelArg(kernel, 10, np[0] * sizeof(cl_float), NULL);//_Copt
+	err |= clSetKernelArg(kernel, 11, np[0] * sizeof(cl_float), NULL);//_Dopt
+	err |= clSetKernelArg(kernel, 12, np[0] * sizeof(cl_float), NULL);//_Eopt
+	err |= clSetKernelArg(kernel, 13, np[0] * sizeof(cl_float), NULL);//_stack
+	err |= clSetKernelArg(kernel, 14, np[0] * sizeof(cl_float), NULL);//smax
+	
+	
+	if (err !=CL_SUCCESS) {
+		printf("Error, could not set kernel args.");
+		exit (7);
+	}
+	
+	err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, (const size_t *)globalSize,  (const size_t *)localSize, 0, NULL, NULL);
+	// Execute the kernel over the entire range of the data set
+	
+	if (err !=CL_SUCCESS) {
+		printf("Error, could not enqueue commands.");
+		exit (8);
+	}
+	
+	// Wait for the command queue to get serviced before reading back results
+	clFinish(queue);
+	
+	err |= clSetKernelArg(kernel, 7, sizeof(cl_mem), &d_out);
+	// Read the results from the device
+	clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL, NULL );
+	
+	for (i=0; i<outSize; i++) 
+		printf("OUT[%d]: %f\n", i, out[i]);
+	
+	/*-------------------------------------------------------------------------*/
     /* Find the best parameter combination */
+	
+    //float a, b, c, d, e, sem, stack;
+    //compute_max(&ap, m0, h0, t0, p0, p1, np, &a, &b, &c, &d, &e, &sem, &stack);
 
-    float a, b, c, d, e, sem, stack;
-    compute_max(&ap, m0, h0, t0, p0, p1, np, &a, &b, &c, &d, &e, &sem, &stack);
-
-    printf("A=%g\n", a);
-    printf("B=%g\n", b);
-    printf("C=%g\n", c);
-    printf("D=%g\n", d);
-    printf("E=%g\n", e);
-    printf("Stack=%g\n", stack);
-    printf("Semblance=%g\n", sem);
+    printf("A=%g\n", out[0]);
+    printf("B=%g\n", out[1]);
+    printf("C=%g\n", out[2]);
+    printf("D=%g\n", out[3]);
+    printf("E=%g\n", out[4]);
+    printf("Stack=%g\n", out[5]);
+    printf("Semblance=%g\n", out[6]);
     printf("\n");
 
     return 0;
