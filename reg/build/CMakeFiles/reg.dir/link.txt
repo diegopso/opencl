@@ -1,0 +1,1 @@
+/usr/bin/cc     CMakeFiles/reg.dir/reg.c.o CMakeFiles/reg.dir/semblance.c.o CMakeFiles/reg.dir/su.c.o  -o reg -rdynamic -lm 
