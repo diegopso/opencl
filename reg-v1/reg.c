@@ -11,9 +11,9 @@
 
 #include <errno.h>
 #include <string.h>
-//#include <unistd.h>
+#include <unistd.h>
 
-//#include "su.h"
+#include <su.h>
 
 #define MAXSOURCE 2048
 #define MAX_DEVICE_NAME_SIZE 100
@@ -22,23 +22,28 @@
 my_aperture_t transform(aperture_t ap) {
   my_aperture_t my_ap;
   my_ap.ap_t = ap.ap_t;
-  vector_init(my_ap.traces);
+  int len = ap.traces.len;
+  my_su_trace_t my_traces[len];
+  //int len = ap.traces.len; n = sizeof(a)/sizeof(a[0]);
+  //vector_init(my_ap.traces);
 
   for (int i = 0; i < ap.traces.len; i++) {
-      su_trace_t tr = &vector_get(ap.traces, i);
+	  su_trace_t *tr = vector_get(ap.traces, i);
       my_su_trace_t my_tr;
 
-      my_tr.data = tr.data;
-      my_tr.dt = tr.dt;
-      my_tr.ns = tr.ns;
-      my_tr.gx = tr.gx;
-      my_tr.sx = tr.sx;
-      my_tr.gy = tr.gy;
-      my_tr.sy = tr.sy;
+      my_tr.data = tr->data;
+      my_tr.dt = tr->dt;
+      my_tr.ns = tr->ns;
+      my_tr.gx = tr->gx;
+      my_tr.sx = tr->sx;
+      my_tr.gy = tr->gy;
+      my_tr.sy = tr->sy;
 
-      vector_push(my_ap.traces, my_tr);
+      my_traces[i] = my_tr;
+
   }
 
+  my_ap.traces = my_traces;
   return my_ap;
 }
 
@@ -58,6 +63,7 @@ int main(int argc, char *argv[])
             "C0 C1 NC D0 D1 ND E0 E1 NE INPUT\n", argv[0]);
         exit(1);
     }
+
 
     float m0 = atof(argv[1]);
     float h0 = atof(argv[2]);
@@ -101,9 +107,8 @@ int main(int argc, char *argv[])
     for (int i = 0; i < traces.len; i++)
         vector_push(ap.traces, &vector_get(traces, i));
 
-
     my_aperture_t my_ap = transform(ap);
-
+    puts("fim transform");
 
     /*-------------------------------------------------------------------------*/
 

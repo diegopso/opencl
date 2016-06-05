@@ -1,4 +1,5 @@
-#include "my_semblance.h"
+#include <my_semblance.h>
+#include <my_semblance.c>
 
 __kernel void foo(
     my_aperture_t *ap, const float m0, const float h0, const float t0,

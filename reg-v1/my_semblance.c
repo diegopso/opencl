@@ -1,22 +1,30 @@
-#include "my_semblance.h"
+#include <my_semblance.h>
 
 #include <math.h>
 #include <string.h>
-#include <vector.h>
 #include <utils.h>
 
-void su_get_midpoint(my_su_trace_t *tr, float *mx, float *my)
+static float my_get_scalco(my_su_trace_t tr)
 {
-	float s = get_scalco(tr);
-	*mx = s * (tr->gx + tr->sx) * 0.5;
-	*my = s * (tr->gy + tr->sy) * 0.5;
+	if (tr.scalco == 0)
+		return 1;
+	if (tr.scalco > 0)
+		return tr.scalco;
+	return 1.0f / tr.scalco;
 }
 
-void su_get_halfoffset(my_su_trace_t *tr, float *hx, float *hy)
+void my_su_get_midpoint(my_su_trace_t tr, float *mx, float *my)
 {
-	float s = get_scalco(tr);
-	*hx = s * (tr->gx - tr->sx) * 0.5;
-	*hy = s * (tr->gy - tr->sy) * 0.5;
+	float s = my_get_scalco(tr);
+	*mx = s * (tr.gx + tr.sx) * 0.5;
+	*my = s * (tr.gy + tr.sy) * 0.5;
+}
+
+void my_su_get_halfoffset(my_su_trace_t tr, float *hx, float *hy)
+{
+	float s = my_get_scalco(tr);
+	*hx = s * (tr.gx - tr.sx) * 0.5;
+	*hy = s * (tr.gy - tr.sy) * 0.5;
 }
 
 /* The moveout time function tells the time when a wave, propagating from
@@ -53,8 +61,8 @@ float semblance_2d(my_aperture_t *ap,
 {
     /* Get the sample rate from the first trace inside the aperture,
        it is the same value for all other traces */
-    su_trace_t *tr = vector_get(ap->traces, 0);
-    float dt = (float) tr->dt / 1000000;
+	my_su_trace_t tr = ap->traces[0];
+    float dt = (float) tr.dt / 1000000;
     float idt = 1 / dt;
 
     /* Calculate coherence window (number of trace samples in the trace to
@@ -70,24 +78,25 @@ float semblance_2d(my_aperture_t *ap,
     int M = 0, skip = 0;
     float _stack = 0;
 
-    for (int i = 0; i < ap->traces.len; i++) {
-        tr = vector_get(ap->traces, i);
+    int len = sizeof(ap->traces)/sizeof(ap->traces[0]);
+    for (int i = 0; i < len; i++) {
+        tr = ap->traces[i];
 
         /* Get the trace coordinates in the midpoint and halfoffset spaces */
         float mx, my, hx, hy;
-        su_get_midpoint(tr, &mx, &my);
-        su_get_halfoffset(tr, &hx, &hy);
+        my_su_get_midpoint(tr, &mx, &my);
+        my_su_get_halfoffset(tr, &hx, &hy);
 
         /* Compute the moveout time ignoring mx and hx because the data is 2D */
         float t = time_2d(A, B, C, D, E, t0, m0, my, h0, hy);
         int it = (int)(t * idt);
 
         /* Check if the time belongs to the range of the trace */
-        if (it - tau >= 0 && it + tau < tr->ns) {
+        if (it - tau >= 0 && it + tau < tr.ns) {
             for (int j = 0; j < w; j++) {
                 int k = it + j - tau;
                 float v = interpol_linear(k, k+1,
-                        tr->data[k], tr->data[k+1],
+                        tr.data[k], tr.data[k+1],
                         t*idt + j - tau);
                 num[j] += v;
                 den[j] += v*v;
