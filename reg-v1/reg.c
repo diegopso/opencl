@@ -20,18 +20,31 @@
 #define LOCALSIZE 32
 
 my_aperture_t transform(aperture_t ap) {
+  puts("init transform");
   my_aperture_t my_ap;
-  my_ap.ap_t = ap.ap_t;
-  int len = ap.traces.len;
-  my_su_trace_t my_traces[len];
-  //int len = ap.traces.len; n = sizeof(a)/sizeof(a[0]);
-  //vector_init(my_ap.traces);
 
+  //copy ap_t value
+  my_ap.ap_t = ap.ap_t;
+
+  int len = ap.traces.len;
+//  printf("ap.traces.len= %d\n", len);
+
+
+  /* copy tr value */
   for (int i = 0; i < ap.traces.len; i++) {
-	  su_trace_t *tr = vector_get(ap.traces, i);
+      su_trace_t *tr = vector_get(ap.traces, i);
       my_su_trace_t my_tr;
 
-      my_tr.data = tr->data;
+      int len_tr_data = sizeof(tr->data)/sizeof(tr->data[0]);
+//      printf("len_tr_data= %d\n", len_tr_data);
+
+      /* copy tr data value */
+      for(int j = 0; j < len_tr_data ; j ++) {
+	  float *v = malloc (sizeof(float));
+	  memcpy (v, &tr->data[i], sizeof(float));
+	  my_tr.data[i] = *v;
+      }
+
       my_tr.dt = tr->dt;
       my_tr.ns = tr->ns;
       my_tr.gx = tr->gx;
@@ -39,11 +52,9 @@ my_aperture_t transform(aperture_t ap) {
       my_tr.gy = tr->gy;
       my_tr.sy = tr->sy;
 
-      my_traces[i] = my_tr;
-
+      my_ap.traces[i] = my_tr;
   }
 
-  my_ap.traces = my_traces;
   return my_ap;
 }
 
@@ -56,7 +67,7 @@ int main(int argc, char *argv[])
     /* A, B, C, D, E */
     float p0[n], p1[n];
     int np[n];
-	float out[outSize];
+    float out[outSize];
 
     if (argc != 21) {
         fprintf(stderr, "Usage: %s M0 H0 T0 TAU A0 A1 NA B0 B1 NB "
@@ -108,7 +119,11 @@ int main(int argc, char *argv[])
         vector_push(ap.traces, &vector_get(traces, i));
 
     my_aperture_t my_ap = transform(ap);
-    puts("fim transform");
+    puts("fim transform\n");
+
+    int my_ap_size = sizeof(my_ap.traces)/sizeof(my_ap.traces[0]);
+    printf("my_ap_size traces: %d\n", my_ap_size);
+//    exit(1);
 
     /*-------------------------------------------------------------------------*/
 
@@ -209,7 +224,7 @@ int main(int argc, char *argv[])
 	puts("createProgram");
 			
 	// Build the program executable " --disable-multilib "
-	err = clBuildProgram(program, 0,NULL, NULL, NULL, NULL);
+	err = clBuildProgram(program, 0,NULL, "-I.", NULL, NULL);
 	if (err == CL_BUILD_PROGRAM_FAILURE) {
 		cl_int logStatus;
 		char* buildLog = NULL;
@@ -247,7 +262,7 @@ int main(int argc, char *argv[])
 	err = clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL, NULL);
 	
 	// Set the arguments to our compute kernel
-	err |= clSetKernelArg(kernel, 0, sizeof(aperture_t), &ap);
+	err |= clSetKernelArg(kernel, 0, sizeof(my_aperture_t), &my_ap);
 	err |= clSetKernelArg(kernel, 1, sizeof(float), &m0);
 	err |= clSetKernelArg(kernel, 2, sizeof(float), &h0);
 	err |= clSetKernelArg(kernel, 3, sizeof(float), &t0);

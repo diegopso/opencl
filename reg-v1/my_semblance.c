@@ -1,8 +1,8 @@
 #include <my_semblance.h>
 
-#include <math.h>
-#include <string.h>
-#include <utils.h>
+#ifndef MAX
+# define MAX(a, b) ((a)>(b)?(a):(b))
+#endif
 
 static float my_get_scalco(my_su_trace_t tr)
 {
@@ -27,6 +27,8 @@ void my_su_get_halfoffset(my_su_trace_t tr, float *hx, float *hy)
 	*hy = s * (tr.gy - tr.sy) * 0.5;
 }
 
+float sqrtf(float x);
+
 /* The moveout time function tells the time when a wave, propagating from
  * (m0,h0) at t0 to the tace */
 static float time_2d(float A, float B, float C, float D, float E,
@@ -41,7 +43,7 @@ static float time_2d(float A, float B, float C, float D, float E,
     if (t2 < 0)
         return -1;
     else
-        return sqrt(t2);
+        return sqrtf(t2);
 }
 
 float interpol_linear(float x0, float x1, float y0, float y1, float x)
@@ -72,9 +74,16 @@ float semblance_2d(my_aperture_t *ap,
 
     /* Calculate the semblance  */
 
-    float num[w], den[w];
-    memset(&num[0], 0, sizeof(num));
-    memset(&den[0], 0, sizeof(den));
+//    printf("w: %d", w);
+
+    float num[500];
+    float den[500];
+    for(int i=0;i<w;i++) {
+	  num[i]=0;
+	  den[i]=0;
+    }
+    //memset(&num[0], 0, sizeof(num));
+    //memset(&den[0], 0, sizeof(den));
     int M = 0, skip = 0;
     float _stack = 0;
 

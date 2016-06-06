@@ -4,14 +4,11 @@
 typedef struct my_aperture my_aperture_t;
 typedef struct my_su_trace my_su_trace_t;
 
-struct my_aperture
-{
-  float ap_t;
-  my_su_trace_t* traces;
-};
+#define TRACES_MAX_SIZE 116
+#define DATA_MAX_SIZE 2
 
 struct my_su_trace {
-  float *data;
+  float data[DATA_MAX_SIZE];
   unsigned short ns;
   unsigned short dt;
   int sx;
@@ -19,6 +16,12 @@ struct my_su_trace {
   int gx;
   int gy;
   short scalco;
+};
+
+struct my_aperture
+{
+  float ap_t;
+  my_su_trace_t traces[TRACES_MAX_SIZE];
 };
 
 float semblance_2d (my_aperture_t *ap, float A, float B, float C, float D, float E,
