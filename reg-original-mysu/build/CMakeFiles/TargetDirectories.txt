@@ -1,0 +1,3 @@
+/home/mo802e08/Downloads/reg/build/CMakeFiles/edit_cache.dir
+/home/mo802e08/Downloads/reg/build/CMakeFiles/rebuild_cache.dir
+/home/mo802e08/Downloads/reg/build/CMakeFiles/reg.dir
