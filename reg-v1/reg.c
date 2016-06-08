@@ -5,8 +5,9 @@
 
 #include <utils.h>
 #include <vector.h>
-#include <my_semblance.h>
 #include <semblance.h>
+#include <my_semblance.h>
+
 #include <CL/opencl.h>
 
 #include <errno.h>
