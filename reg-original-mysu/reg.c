@@ -3,7 +3,6 @@
 #include <float.h>
 #include <math.h>
 #include <utils.h>
-#include <vector.h>
 #include <semblance.h>
 #include <my_semblance.h>
 #include <su.h>
@@ -19,7 +18,10 @@ void transformTr(su_trace_t *tr, my_su_trace_t *mtr)
     (*mtr).gy = (*tr).gy;
     (*mtr).sy = (*tr).sy;
     (*mtr).scalco = (*tr).scalco;
-    (*mtr).data = (*tr).data;
+
+    for (int i = 0; i < DATA_MAX_SIZE; i++) {
+        (*mtr).data[i] = (*tr).data[i];
+    }
 }
 
 /*
@@ -95,6 +97,7 @@ void compute_max(my_aperture_t *ap, float m0, float h0, float t0,
             ssmax = smax[ia];
         }
     }
+
 }
 
 int main(int argc, char *argv[])
@@ -134,29 +137,21 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    su_trace_t tr;
-    my_su_trace_t mtr;
-    vector_t(my_su_trace_t) mtraces;
-    vector_init(mtraces);
-
-    while (su_fgettr(fp, &tr)) {
-        transformTr(&tr, &mtr);
-        vector_push(mtraces, mtr);
-    }
-
     /* Construct the aperture structure from the traces, which is a vector
      * containing pointers to traces */
-
+    su_trace_t tr;
+    my_su_trace_t mtr;
     my_aperture_t map;
 
     map.ap_m = 0;
     map.ap_h = 0;
     map.ap_t = tau;
-    
-    vector_init(map.traces);
-    
-    for (int i = 0; i < mtraces.len; i++) {
-        vector_push(map.traces, &vector_get(mtraces, i));
+
+    i = 0;
+    while (su_fgettr(fp, &tr)) {
+        transformTr(&tr, &mtr);
+        map.traces[i] = mtr;
+        i++;
     }
 
     /* Find the best parameter combination */

@@ -4,11 +4,13 @@
 #include <vector.h>
 #include <my_su.h>
 
+#define TRACES_MAX_SIZE 116
+
 typedef struct my_aperture my_aperture_t;
 
 struct my_aperture {
     float ap_m, ap_h, ap_t;
-    vector_t(my_su_trace_t*) traces;
+    my_su_trace_t traces[TRACES_MAX_SIZE];
 };
 
 float my_semblance_2d(my_aperture_t *ap,

@@ -1,10 +1,9 @@
 #include "my_semblance.h"
 #include "my_su.h"
-
+#include <stdio.h>
 
 #include <math.h>
 #include <string.h>
-#include <vector.h>
 #include <utils.h>
 
 /* The moveout time function tells the time when a wave, propagating from
@@ -41,7 +40,7 @@ float my_semblance_2d(my_aperture_t *ap,
 {
     /* Get the sample rate from the first trace inside the aperture,
        it is the same value for all other traces */
-    my_su_trace_t *tr = vector_get(ap->traces, 0);
+    my_su_trace_t *tr = &ap->traces[0];
     float dt = (float) tr->dt / 1000000;
     float idt = 1 / dt;
 
@@ -58,8 +57,8 @@ float my_semblance_2d(my_aperture_t *ap,
     int M = 0, skip = 0;
     float _stack = 0;
 
-    for (int i = 0; i < ap->traces.len; i++) {
-        tr = vector_get(ap->traces, i);
+    for (int i = 0; i < TRACES_MAX_SIZE; i++) {
+        tr = &ap->traces[i];
 
         /* Get the trace coordinates in the midpoint and halfoffset spaces */
         float mx, my, hx, hy;

@@ -3,6 +3,8 @@
 
 typedef struct my_su_trace my_su_trace_t;
 
+#define DATA_MAX_SIZE 2048
+
 struct my_su_trace {
 	int sx;
 	int sy;
@@ -11,7 +13,7 @@ struct my_su_trace {
 	unsigned short ns;
 	unsigned short dt;
 	short scalco;
-	float *data;
+	float data[DATA_MAX_SIZE];
 };
 
 /*
