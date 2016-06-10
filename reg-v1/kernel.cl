@@ -26,7 +26,7 @@ __kernel void foo(
 	    float st;
 	    /* Check the fit of the parameters to the data and update the
 	     * maximum for that point if necessary */
-	    float s = semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
+	    float s = my_semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
 
 	    if (s > smax[ia])
 	      {

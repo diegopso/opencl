@@ -20,30 +20,27 @@
 #define MAX_DEVICE_NAME_SIZE 100
 #define LOCALSIZE 32
 
+#define DATA_SIZE 1660
+
+
+/*Transform aperture_t to my_aperture_t */
 my_aperture_t transform(aperture_t ap) {
-  puts("init transform");
   my_aperture_t my_ap;
 
-  //copy ap_t value
+  /* copy ap_t value */
   my_ap.ap_t = ap.ap_t;
-
-  int len = ap.traces.len;
-//  printf("ap.traces.len= %d\n", len);
-
 
   /* copy tr value */
   for (int i = 0; i < ap.traces.len; i++) {
+
       su_trace_t *tr = vector_get(ap.traces, i);
       my_su_trace_t my_tr;
 
-      int len_tr_data = sizeof(tr->data)/sizeof(tr->data[0]);
-//      printf("len_tr_data= %d\n", len_tr_data);
-
       /* copy tr data value */
-      for(int j = 0; j < len_tr_data ; j ++) {
+      for(int j = 0; j < DATA_SIZE ; j ++) {
 	  float *v = malloc (sizeof(float));
-	  memcpy (v, &tr->data[i], sizeof(float));
-	  my_tr.data[i] = *v;
+	  memcpy (v, &tr->data[j], sizeof(float));
+	  my_tr.data[j] = *v;
       }
 
       my_tr.dt = tr->dt;
@@ -58,6 +55,7 @@ my_aperture_t transform(aperture_t ap) {
 
   return my_ap;
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -120,11 +118,12 @@ int main(int argc, char *argv[])
         vector_push(ap.traces, &vector_get(traces, i));
 
     my_aperture_t my_ap = transform(ap);
-    puts("fim transform\n");
 
-    int my_ap_size = sizeof(my_ap.traces)/sizeof(my_ap.traces[0]);
-    printf("my_ap_size traces: %d\n", my_ap_size);
-//    exit(1);
+    printf("my_ap.ap_t: %f\n", my_ap.ap_t);
+	printf("my_ap.traces[0].dt: %hu\n", my_ap.traces[0].dt);
+	printf("my_ap.traces[0].data[0]: %f\n", my_ap.traces[0].data[0]);
+	printf("my_ap.traces[0].data[1]: %f\n", my_ap.traces[0].data[1]);
+	puts("fim transform\n");
 
     /*-------------------------------------------------------------------------*/
 
