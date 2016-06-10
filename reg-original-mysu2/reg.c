@@ -13,6 +13,9 @@
 
 #include <su.h>
 
+
+#define DATA_SIZE 1660
+
 my_aperture_t transform(aperture_t ap) {
   puts("init transform");
   my_aperture_t my_ap;
@@ -34,26 +37,11 @@ my_aperture_t transform(aperture_t ap) {
       int len_tr_data = sizeof(tr->data)/sizeof(tr->data[0]);
 
       /* copy tr data value */
-      for(int j = 0; j < len_tr_data ; j ++) {
+      for(int j = 0; j < DATA_SIZE ; j ++) {
 	  float *v = malloc (sizeof(float));
 	  memcpy (v, &tr->data[j], sizeof(float));
 	  my_tr.data[j] = *v;
       }
-
-//      float data[DATA_MAX_SIZE];
-//        unsigned short ns;
-//        unsigned short dt;
-//        int sx;
-//        int sy;
-//        int gx;
-//        int gy;
-//        short scalco;
-
-//      unsigned short *dt = malloc (sizeof(unsigned short));
-//      memcpy (dt, &tr->dt, sizeof(unsigned short));
-//      printf("dt memcpy: %hu\n",*dt);
-//      my_tr.dt = *dt;
-//      printf("dt: %hu\n",my_tr.dt);
 
       my_tr.dt = tr->dt;
       my_tr.ns = tr->ns;
@@ -206,7 +194,7 @@ int main(int argc, char *argv[])
     printf("map.ap_t: %f\n", map.ap_t);
     printf("map.traces[0].dt: %hu\n", map.traces[0].dt);
     printf("map.traces[0].data[0]: %f\n", map.traces[0].data[0]);
-    printf("map.traces[0].data[0]: %f\n", map.traces[0].data[1]);
+    printf("map.traces[0].data[1]: %f\n", map.traces[0].data[1]);
     puts("fim transform\n");
 
     int my_ap_size = sizeof(map.traces)/sizeof(map.traces[0]);
