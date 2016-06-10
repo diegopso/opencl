@@ -14,7 +14,7 @@
 #include <unistd.h>
 
 
-#define MAXSOURCE 2048
+#define MAXSOURCE 5000
 #define MAX_DEVICE_NAME_SIZE 100
 #define LOCALSIZE 32
 
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
     size_t source_size = fread(kernelSource, 1, MAXSOURCE, file);
     
     //Device input buffers
-    cl_mem d_p0, d_p1, d_np, d_aopt, d_bopt, d_copt, d_dopt, d_eopt, d_stack, d_smax;
+    cl_mem d_p0, d_p1, d_np, d_aopt, d_bopt, d_copt, d_dopt, d_eopt, d_stack, d_smax, d_map;
     //Device output buffer
     cl_mem  d_out;
     
@@ -201,15 +201,16 @@ int main(int argc, char *argv[])
     size_t bytes_p0 = sizeof(float) * n;
     size_t bytes_p1 = sizeof(float) * n;
     size_t bytes_np = sizeof(int) * n;
+    size_t bytes_map = sizeof(my_aperture_t);
     size_t bytes_opt = sizeof(float) * np[0];
     size_t bytes_out = sizeof(float) * outSize;
     
     //Numero de workitems em cada local work group (local size)
     size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
     size_t globalSize[3] = {
-        ceil((float)np[0] / (float)localSize[0]),
-        ceil((float)np[1] / (float)localSize[1]),
-        ceil((float)np[2] / (float)localSize[2])
+        ceil(np[0] / localSize[0]),
+        ceil(np[1] / localSize[1]),
+        ceil(np[2] / localSize[2])
     };
     
     // Bind to platforms
@@ -262,11 +263,9 @@ int main(int argc, char *argv[])
         printf("Error, could not create program with source.");
         exit (6);
     }
-
-    puts("createProgram");
             
     // Build the program executable " --disable-multilib "
-    err = clBuildProgram(program, 0,NULL, "-I.", NULL, NULL);
+    err = clBuildProgram(program, 0, NULL, "-I.", NULL, NULL);
     if (err == CL_BUILD_PROGRAM_FAILURE) {
         cl_int logStatus;
         char* buildLog = NULL;
@@ -285,7 +284,7 @@ int main(int argc, char *argv[])
     
     // Create the compute kernel in the program we wish to run
     
-    kernel = clCreateKernel(program, "mmul", &err);
+    kernel = clCreateKernel(program, "foo", &err);
     
     if (err !=CL_SUCCESS) {
         printf("Error, could not create the kernel.");
@@ -293,18 +292,20 @@ int main(int argc, char *argv[])
     }
     
     // Create the input and output arrays in device memory for our calculation
+    d_map = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_map, NULL, NULL);
     d_p0 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p0, NULL, NULL);
     d_p1 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p1, NULL, NULL);
     d_np = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_np, NULL, NULL);
     d_out = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_out, NULL, NULL);
     
     // Write our data set into the input array in device memory
+    err = clEnqueueWriteBuffer(queue, d_map, CL_TRUE, 0, bytes_map, &map, 0, NULL, NULL);
     err = clEnqueueWriteBuffer(queue, d_p0, CL_TRUE, 0, bytes_p0, p0, 0, NULL, NULL);
     err = clEnqueueWriteBuffer(queue, d_p1, CL_TRUE, 0, bytes_p1, p1, 0, NULL, NULL);
     err = clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL, NULL);
     
     // Set the arguments to our compute kernel
-    err |= clSetKernelArg(kernel, 0, sizeof(my_aperture_t), &map);
+    err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &map);
     err |= clSetKernelArg(kernel, 1, sizeof(float), &m0);
     err |= clSetKernelArg(kernel, 2, sizeof(float), &h0);
     err |= clSetKernelArg(kernel, 3, sizeof(float), &t0);
@@ -328,7 +329,6 @@ int main(int argc, char *argv[])
     
     err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, (const size_t *)globalSize,  (const size_t *)localSize, 0, NULL, NULL);
     // Execute the kernel over the entire range of the data set
-    
     if (err !=CL_SUCCESS) {
         printf("Error, could not enqueue commands.");
         exit (8);
@@ -348,17 +348,17 @@ int main(int argc, char *argv[])
 
     /* Find the best parameter combination */
 
-    float a, b, c, d, e, sem, stack;
-    compute_max(&map, m0, h0, t0, p0, p1, np, &a, &b, &c, &d, &e, &sem, &stack);
+    // float a, b, c, d, e, sem, stack;
+    // compute_max(&map, m0, h0, t0, p0, p1, np, &a, &b, &c, &d, &e, &sem, &stack);
 
-    printf("A=%g\n", a);
-    printf("B=%g\n", b);
-    printf("C=%g\n", c);
-    printf("D=%g\n", d);
-    printf("E=%g\n", e);
-    printf("Stack=%g\n", stack);
-    printf("Semblance=%g\n", sem);
-    printf("\n");
+    // printf("A=%g\n", a);
+    // printf("B=%g\n", b);
+    // printf("C=%g\n", c);
+    // printf("D=%g\n", d);
+    // printf("E=%g\n", e);
+    // printf("Stack=%g\n", stack);
+    // printf("Semblance=%g\n", sem);
+    // printf("\n");
 
     return 0;
 }
