@@ -1,0 +1,15 @@
+Execute these commands to test the program:
+
+    mkdir build
+    cd build
+    cmake ..
+    make
+    cd ..
+    ./test-reg.sh
+
+OR
+
+  	gcc -o build/reg reg.c -I. semblance.c my_semblance.c su.c my_su.c  -lOpenCL -lm -std=gnu99 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE
+
+The expected results for the parameters, semblance 
+and stack are located in expected.out
