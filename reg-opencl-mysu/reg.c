@@ -16,7 +16,6 @@
 
 #define MAXSOURCE 5000
 #define MAX_DEVICE_NAME_SIZE 100
-#define LOCALSIZE 32
 
 void transformTr(su_trace_t *tr, my_su_trace_t *mtr)
 {
@@ -206,12 +205,14 @@ int main(int argc, char *argv[])
     size_t bytes_out = sizeof(float) * outSize;
     
     //Numero de workitems em cada local work group (local size)
-    size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
+    size_t localSize[3] = {1, 1, 1};
     size_t globalSize[3] = {
-        ceil(np[0] / localSize[0]),
-        ceil(np[1] / localSize[1]),
-        ceil(np[2] / localSize[2])
+        20,
+        20,
+        20
     };
+
+    // printf("%f\n", ceil((float)np[0] / localSize[0]));
     
     // Bind to platforms
     clGetPlatformIDs(0, NULL, &platformCount);
@@ -303,12 +304,12 @@ int main(int argc, char *argv[])
     err = clEnqueueWriteBuffer(queue, d_p0, CL_TRUE, 0, bytes_p0, p0, 0, NULL, NULL);
     err = clEnqueueWriteBuffer(queue, d_p1, CL_TRUE, 0, bytes_p1, p1, 0, NULL, NULL);
     err = clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL, NULL);
-    
+
     // Set the arguments to our compute kernel
     err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &map);
-    err |= clSetKernelArg(kernel, 1, sizeof(float), &m0);
-    err |= clSetKernelArg(kernel, 2, sizeof(float), &h0);
-    err |= clSetKernelArg(kernel, 3, sizeof(float), &t0);
+    err |= clSetKernelArg(kernel, 1, sizeof(cl_float), &m0);
+    err |= clSetKernelArg(kernel, 2, sizeof(cl_float), &h0);
+    err |= clSetKernelArg(kernel, 3, sizeof(cl_float), &t0);
     err |= clSetKernelArg(kernel, 4, sizeof(cl_mem), &d_p0);
     err |= clSetKernelArg(kernel, 5, sizeof(cl_mem), &d_p1);
     err |= clSetKernelArg(kernel, 6, sizeof(cl_mem), &d_np);
@@ -331,15 +332,32 @@ int main(int argc, char *argv[])
     // Execute the kernel over the entire range of the data set
     if (err !=CL_SUCCESS) {
         printf("Error, could not enqueue commands.");
+        printf(": %d\n", err);
         exit (8);
     }
     
     // Wait for the command queue to get serviced before reading back results
     clFinish(queue);
+
+    if (err !=CL_SUCCESS) {
+        printf("Error: %d\n", err);
+        exit (8);
+    }
     
     err |= clSetKernelArg(kernel, 7, sizeof(cl_mem), &d_out);
+
+    if (err !=CL_SUCCESS) {
+        printf("Error: %d\n", err);
+        exit (8);
+    }
+
     // Read the results from the device
-    clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL, NULL );
+    err |= clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL, NULL );
+
+    if (err !=CL_SUCCESS) {
+        printf("Error: %d\n", err);
+        exit (8);
+    }    
     
     for (i=0; i<outSize; i++) 
         printf("OUT[%d]: %f\n", i, out[i]);
