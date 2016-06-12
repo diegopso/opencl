@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
     err = clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL, NULL);
 
     // Set the arguments to our compute kernel
-    err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &map);
+    err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_map);
     err |= clSetKernelArg(kernel, 1, sizeof(cl_float), &m0);
     err |= clSetKernelArg(kernel, 2, sizeof(cl_float), &h0);
     err |= clSetKernelArg(kernel, 3, sizeof(cl_float), &t0);

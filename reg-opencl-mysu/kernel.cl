@@ -124,11 +124,9 @@ __kernel void foo(__global my_aperture_t *ap, const float m0,	const float h0,	co
 	ib = get_global_id(1);
 	ic = get_global_id(2);
 
-printf("Problema ao usar *ap\n");
-
 	a = p0[0] + ((float)ia / (float)np[0]) * (p1[0]-p0[0]);
-	b = p0[1] + ((float)ib / (float)np[1])*(p1[1]-p0[1]);
-	c = p0[2] + ((float)ic / (float)np[2])*(p1[2]-p0[2]);
+	b = p0[1] + ((float)ib / (float)np[1]) * (p1[1]-p0[1]);
+	c = p0[2] + ((float)ic / (float)np[2]) * (p1[2]-p0[2]);
 	
 	for (id = 0; id < np[3]; id++)
 	{
