@@ -18,7 +18,7 @@
 
 #define MAXSOURCE 2048
 #define MAX_DEVICE_NAME_SIZE 100
-#define LOCALSIZE 8
+#define LOCALSIZE 32
 
 #define DATA_SIZE 1660
 
@@ -165,8 +165,7 @@ int main(int argc, char *argv[])
     size_t bytes_opt = sizeof(float) * np[0];
 	size_t bytes_out = sizeof(float) * outSize;
     
-
-	//Numero de workitems em cada local work group (local size)
+    //Numero de workitems em cada local work group (local size)
     size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
     size_t globalSize[3] = {
         ceil((float)np[0] / (float)localSize[0]),
@@ -174,7 +173,6 @@ int main(int argc, char *argv[])
         ceil((float)np[2] / (float)localSize[2])
     };
     
-
     // Bind to platforms
 	clGetPlatformIDs(0, NULL, &platformCount);
 	if (platformCount == 0) {
@@ -229,7 +227,7 @@ int main(int argc, char *argv[])
 	puts("createProgram");
 			
 	// Build the program executable " --disable-multilib "
-	err = clBuildProgram(program, 0,NULL, NULL, NULL, NULL);
+	err = clBuildProgram(program, 0,NULL, "-I.", NULL, NULL);
 	if (err == CL_BUILD_PROGRAM_FAILURE) {
 		cl_int logStatus;
 		char* buildLog = NULL;
@@ -248,7 +246,7 @@ int main(int argc, char *argv[])
 	
 	// Create the compute kernel in the program we wish to run
 	
-	kernel = clCreateKernel(program, "foo", &err);
+	kernel = clCreateKernel(program, "mmul", &err);
 	
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not create the kernel.");
@@ -292,7 +290,7 @@ int main(int argc, char *argv[])
 
 	err = clEnqueueWriteBuffer(queue, d_ap, CL_TRUE, 0, bytes_ap, p0, 0, NULL, NULL);
 
-	err |= clSetKernelArg(kernel, 0, sizeof(my_aperture_t), &d_ap);
+	err |= clSetKernelArg(kernel, 0, sizeof(my_aperture_t), &my_ap);
 	err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_out);
 	
 	if (err !=CL_SUCCESS) {
@@ -304,7 +302,7 @@ int main(int argc, char *argv[])
 	// Execute the kernel over the entire range of the data set
 	
 	if (err !=CL_SUCCESS) {
-		printf("Error, could not enqueue commands. %d\n", err);
+		printf("Error, could not enqueue commands.");
 		exit (8);
 	}
 	

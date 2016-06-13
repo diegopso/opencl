@@ -25,10 +25,10 @@ struct my_aperture
   int traces_len;
 };
 
-
+/*
 float my_semblance_2d (my_aperture_t *ap, float A, float B, float C, float D, float E,
 	      float t0, float m0, float h0, float *stack);
-
+	      */
 
 
 #endif /* MY_SEMBLANCE_H__ */
