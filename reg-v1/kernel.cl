@@ -1,7 +1,7 @@
-#include <my_semblance.h>
+#include <my_semblance_kernel.h>
 #include <my_semblance.c>
 
-__kernel void foo(
+__kernel void calculate(
 		__global my_aperture_t *ap,
 		const float m0,
 		const float h0,
@@ -11,30 +11,22 @@ __kernel void foo(
 		__global int *np,
 		__global float *out,
 
-		__local float *_Aopt,
-		__local float *_Bopt,
-		__local float *_Copt,
-		__local float *_Dopt,
-		__local float *_Eopt,
-		__local float *_stack,
-		__local float *smax)
+		__global float *_Aopt,
+		__global float *_Bopt,
+		__global float *_Copt,
+		__global float *_Dopt,
+		__global float *_Eopt,
+		__global float *_stack,
+		__global float *smax)
 {
-	printf("inside kernel\n");
 
 	int ia = get_global_id(0);
 	int ib = get_global_id(1);
 	int ic = get_global_id(2);
 
-	printf("my_ap.ap_t: %f \n", ap->ap_t);
-	printf("my_ap.traces[0].dt: %hu\n", ap->traces[0].dt);
-	printf("my_ap.traces[0].data[0]: %f\n", ap->traces[0].data[0]);
-	printf("my_ap.traces[0].data[1]: %f\n", ap->traces[0].data[1]);
-
-	printf(" ia: %d - ib: %d -  ic: %d \n", ia, ib, ic);
-
 	float a = p0[0] + ((float)ia / (float)np[0]) * (p1[0]-p0[0]);
-	float b = p0[1] + ((float)ib / (float)np[1])*(p1[1]-p0[1]);
-	float c = p0[2] + ((float)ic / (float)np[2])*(p1[2]-p0[2]);
+	float b = p0[1] + ((float)ib / (float)np[1]) * (p1[1]-p0[1]);
+	float c = p0[2] + ((float)ic / (float)np[2]) * (p1[2]-p0[2]);
 
 	for (int id = 0; id < np[3]; id++)
 	{
@@ -45,14 +37,11 @@ __kernel void foo(
 
 			float e = p0[4] + ((float)ie / (float)np[4])*(p1[4]-p0[4]);
 
-			printf("BEFORE semblance a: %f -b: %f -c: %f -d: %f -e: %f\n", a,b,c,d,e);
-
 			float st;
 			/* Check the fit of the parameters to the data and update the
 			 * maximum for that point if necessary */
 			float s = my_semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
 
-			printf("s: %f \n" , s);
 			if (s > smax[ia])
 			{
 				smax[ia] = s;
@@ -65,8 +54,6 @@ __kernel void foo(
 			}
 		}
 	}
-
-	barrier(CLK_LOCAL_MEM_FENCE);
 
 	/* Now find the best fit between different 'A' values */
 	float ssmax = -1.0;

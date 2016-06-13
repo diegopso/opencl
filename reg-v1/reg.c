@@ -119,11 +119,6 @@ int main(int argc, char *argv[])
         vector_push(ap.traces, &vector_get(traces, i));
 
     my_aperture_t my_ap = transform(ap);
-
-    printf("my_ap.ap_t: %f\n", my_ap.ap_t);
-	printf("my_ap.traces[0].dt: %hu\n", my_ap.traces[0].dt);
-	printf("my_ap.traces[0].data[0]: %f\n", my_ap.traces[0].data[0]);
-	printf("my_ap.traces[0].data[1]: %f\n", my_ap.traces[0].data[1]);
 	puts("fim transform\n");
 
     /*-------------------------------------------------------------------------*/
@@ -175,7 +170,7 @@ int main(int argc, char *argv[])
 //        ceil((float)np[2] / (float)localSize[2])
 //    };
 
-    size_t localSize[3] = {1,1,1};
+    size_t localSize[3] = {5,5,5};
 
     size_t globalSize[3] = {20,20,20};
     
@@ -255,7 +250,7 @@ int main(int argc, char *argv[])
 	
 	// Create the compute kernel in the program we wish to run
 	
-	kernel = clCreateKernel(program, "foo", &err);
+	kernel = clCreateKernel(program, "calculate", &err);
 	
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not create the kernel.");
@@ -263,6 +258,11 @@ int main(int argc, char *argv[])
 	}
 	
 
+	float smax[np[0]];
+	for(int i = 0; i < np[0]; i++){
+		smax[i] = -1.0;
+	}
+	size_t bytes_smax = sizeof(float) * np[0];
 
 	// Create the input and output arrays in device memory for our calculation
 	d_my_ap = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_my_ap, NULL, NULL);
@@ -270,17 +270,22 @@ int main(int argc, char *argv[])
 	d_p1 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p1, NULL, NULL);
 	d_np = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_np, NULL, NULL);
 	d_out = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_out, NULL, NULL);
-	
 
-	// Write our data set into the input array in device memory
+	d_aopt = clCreateBuffer(context, CL_MEM_READ_WRITE , bytes_smax, NULL, NULL);
+	d_bopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
+	d_copt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
+	d_dopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
+	d_eopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
+	d_stack = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
+	d_smax = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_smax, NULL, NULL);
 
 	// Write our data set into the input array in device memory
 
 	err = clEnqueueWriteBuffer(queue, d_my_ap, CL_TRUE, 0, bytes_my_ap, (const void*)&my_ap, 0, NULL, NULL);
-	err = clEnqueueWriteBuffer(queue, d_p0, CL_TRUE, 0, bytes_p0, p0, 0, NULL, NULL);
-	err = clEnqueueWriteBuffer(queue, d_p1, CL_TRUE, 0, bytes_p1, p1, 0, NULL, NULL);
-	err = clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL, NULL);
-
+	err |= clEnqueueWriteBuffer(queue, d_p0, CL_TRUE, 0, bytes_p0, p0, 0, NULL, NULL);
+	err |= clEnqueueWriteBuffer(queue, d_p1, CL_TRUE, 0, bytes_p1, p1, 0, NULL, NULL);
+	err |= clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL, NULL);
+	err |= clEnqueueWriteBuffer(queue, d_smax, CL_TRUE, 0, bytes_smax, smax, 0, NULL, NULL);
 
 	// Set the arguments to our compute kernel
 	err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_my_ap);
@@ -291,13 +296,13 @@ int main(int argc, char *argv[])
 	err |= clSetKernelArg(kernel, 5, sizeof(cl_mem), &d_p1);
 	err |= clSetKernelArg(kernel, 6, sizeof(cl_mem), &d_np);
 	err |= clSetKernelArg(kernel, 7, sizeof(cl_mem), &d_out);
-	err |= clSetKernelArg(kernel, 8, np[0] * sizeof(cl_float), NULL);//_Aopt
-	err |= clSetKernelArg(kernel, 9, np[0] * sizeof(cl_float), NULL);//_Bopt
-	err |= clSetKernelArg(kernel, 10, np[0] * sizeof(cl_float), NULL);//_Copt
-	err |= clSetKernelArg(kernel, 11, np[0] * sizeof(cl_float), NULL);//_Dopt
-	err |= clSetKernelArg(kernel, 12, np[0] * sizeof(cl_float), NULL);//_Eopt
-	err |= clSetKernelArg(kernel, 13, np[0] * sizeof(cl_float), NULL);//_stack
-	err |= clSetKernelArg(kernel, 14, np[0] * sizeof(cl_float), NULL);//smax
+	err |= clSetKernelArg(kernel, 8, np[0] * sizeof(cl_float), &d_aopt);//_Aopt
+	err |= clSetKernelArg(kernel, 9, np[0] * sizeof(cl_float), &d_bopt);//_Bopt
+	err |= clSetKernelArg(kernel, 10, np[0] * sizeof(cl_float), &d_copt);//_Copt
+	err |= clSetKernelArg(kernel, 11, np[0] * sizeof(cl_float), &d_dopt);//_Dopt
+	err |= clSetKernelArg(kernel, 12, np[0] * sizeof(cl_float), &d_eopt);//_Eopt
+	err |= clSetKernelArg(kernel, 13, np[0] * sizeof(cl_float), &d_stack);//_stack
+	err |= clSetKernelArg(kernel, 14, np[0] * sizeof(cl_float), &d_smax);//smax
 	
 
 	
@@ -319,15 +324,8 @@ int main(int argc, char *argv[])
 	
 	// Read the results from the device
 	clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL, NULL );
-	
-	for (i=0; i<outSize; i++) 
-		printf("OUT[%d]: %f\n", i, out[i]);
-	
+
 	/*-------------------------------------------------------------------------*/
-    /* Find the best parameter combination */
-	
-    //float a, b, c, d, e, sem, stack;
-    //compute_max(&ap, m0, h0, t0, p0, p1, np, &a, &b, &c, &d, &e, &sem, &stack);
 
     printf("A=%g\n", out[0]);
     printf("B=%g\n", out[1]);
