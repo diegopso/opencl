@@ -14,10 +14,6 @@ ARGS="4120 -480 1.124 0.005
 -1.0e-07 1.0e-07 20"
 $TIME $PROG $ARGS $DATA
 
-
-exit 1
-
-
 echo
 echo "Test 2:"
 echo
