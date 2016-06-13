@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
         vector_push(ap.traces, &vector_get(traces, i));
 
     my_aperture_t my_ap = transform(ap);
-	puts("fim transform\n");
+	//puts("fim transform\n");
 
     /*-------------------------------------------------------------------------*/
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 //        ceil((float)np[2] / (float)localSize[2])
 //    };
 
-    size_t localSize[3] = {5,5,5};
+    size_t localSize[3] = {2,2,2};
 
     size_t globalSize[3] = {20,20,20};
     
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// Create a command queue
-	queue = clCreateCommandQueue(context, device_id, 0, &err);
+	queue = clCreateCommandQueueWithProperties(context, device_id, 0, &err);
 	
 	// Create the compute program from the source buffer
 	program = clCreateProgramWithSource(context, 1,
@@ -227,8 +227,6 @@ int main(int argc, char *argv[])
 		printf("Error, could not create program with source.");
 		exit (6);
 	}
-
-	puts("createProgram");
 			
 	// Build the program executable " --disable-multilib "
 	err = clBuildProgram(program, 0,NULL, NULL, NULL, NULL);
