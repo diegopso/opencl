@@ -56,7 +56,7 @@ float interpol_linear(float x0, float x1, float y0, float y1, float x)
  * from the aperture. The 'stack' is the average of the values from the traces
  * intersected by the fitted curve
  */
-float my_semblance_2d(my_aperture_t *ap,
+float my_semblance_2d(__global my_aperture_t *ap,
         float A, float B, float C, float D, float E,
         float t0, float m0, float h0,
         float *stack)
@@ -79,8 +79,8 @@ float my_semblance_2d(my_aperture_t *ap,
 
 //    printf("apt: %f, tau: %d, w: %d\n", ap->ap_t, tau, w);
 
-    float num[w];
-    float den[w];
+    float num[50];
+    float den[50];
     for(int i=0;i<w;i++) {
 	  num[i]=0;
 	  den[i]=0;
