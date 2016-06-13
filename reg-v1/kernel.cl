@@ -2,61 +2,87 @@
 #include <my_semblance.c>
 
 __kernel void foo(
-    my_aperture_t *ap, const float m0, const float h0, const float t0,
-    __global float *p0, __global float *p1, __global float *np, __global float *out,
-    __local float *_Aopt, __local float *_Bopt, __local float *_Copt, __local float *_Dopt, __local float *_Eopt,
-    __local float *_stack, __local float *smax)
-  {
-    int ia = get_global_id(0);
-    int ib = get_global_id(1);
-    int ic = get_global_id(2);
+		__global my_aperture_t *ap,
+		const float m0,
+		const float h0,
+		const float t0,
+		__global float *p0,
+		__global float *p1,
+		__global int *np,
+		__global float *out,
 
-    float a = p0[0] + ((float)ia / (float)np[0]) * (p1[0]-p0[0]);
-    float b = p0[1] + ((float)ib / (float)np[1])*(p1[1]-p0[1]);
-    float c = p0[2] + ((float)ic / (float)np[2])*(p1[2]-p0[2]);
+		__local float *_Aopt,
+		__local float *_Bopt,
+		__local float *_Copt,
+		__local float *_Dopt,
+		__local float *_Eopt,
+		__local float *_stack,
+		__local float *smax)
+{
+	printf("inside kernel\n");
 
-    for (int id = 0; id < np[3]; id++)
-      {
+	int ia = get_global_id(0);
+	int ib = get_global_id(1);
+	int ic = get_global_id(2);
 
-	float d = p0[3] + ((float)id / (float)np[3])*(p1[3]-p0[3]);
-	for (int ie = 0; ie < np[4]; ie++)
-	  {
+	printf("my_ap.ap_t: %f \n", ap->ap_t);
+	printf("my_ap.traces[0].dt: %hu\n", ap->traces[0].dt);
+	printf("my_ap.traces[0].data[0]: %f\n", ap->traces[0].data[0]);
+	printf("my_ap.traces[0].data[1]: %f\n", ap->traces[0].data[1]);
 
-	    float e = p0[4] + ((float)ie / (float)np[4])*(p1[4]-p0[4]);
-	    float st;
-	    /* Check the fit of the parameters to the data and update the
-	     * maximum for that point if necessary */
-	    float s = my_semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
+	printf(" ia: %d - ib: %d -  ic: %d \n", ia, ib, ic);
 
-	    if (s > smax[ia])
-	      {
-		smax[ia] = s;
-		_stack[ia] = st;
-		_Aopt[ia] = a;
-		_Bopt[ia] = b;
-		_Copt[ia] = c;
-		_Dopt[ia] = d;
-		_Eopt[ia] = e;
-	      }
-	  }
-      }
+	float a = p0[0] + ((float)ia / (float)np[0]) * (p1[0]-p0[0]);
+	float b = p0[1] + ((float)ib / (float)np[1])*(p1[1]-p0[1]);
+	float c = p0[2] + ((float)ic / (float)np[2])*(p1[2]-p0[2]);
 
-    barrier(CLK_LOCAL_MEM_FENCE);
+	for (int id = 0; id < np[3]; id++)
+	{
 
-    /* Now find the best fit between different 'A' values */
-    float ssmax = -1.0;
-    for (int ia = 0; ia < np[0]; ia++)
-      {
-	if (smax[ia] > ssmax)
-	  {
-	    out[0] = _Aopt[ia];
-	    out[1] = _Bopt[ia];
-	    out[2] = _Copt[ia];
-	    out[3] = _Dopt[ia];
-	    out[4] = _Eopt[ia];
-	    out[5] = _stack[ia];
-	    out[6] = smax[ia];
-	    ssmax = smax[ia];
-	  }
-      }
-  }
+		float d = p0[3] + ((float)id / (float)np[3])*(p1[3]-p0[3]);
+		for (int ie = 0; ie < np[4]; ie++)
+		{
+
+			float e = p0[4] + ((float)ie / (float)np[4])*(p1[4]-p0[4]);
+
+			printf("BEFORE semblance a: %f -b: %f -c: %f -d: %f -e: %f\n", a,b,c,d,e);
+
+			float st;
+			/* Check the fit of the parameters to the data and update the
+			 * maximum for that point if necessary */
+			float s = my_semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
+
+			printf("s: %f \n" , s);
+			if (s > smax[ia])
+			{
+				smax[ia] = s;
+				_stack[ia] = st;
+				_Aopt[ia] = a;
+				_Bopt[ia] = b;
+				_Copt[ia] = c;
+				_Dopt[ia] = d;
+				_Eopt[ia] = e;
+			}
+		}
+	}
+
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	/* Now find the best fit between different 'A' values */
+	float ssmax = -1.0;
+	for (int ia = 0; ia < np[0]; ia++)
+	{
+		if (smax[ia] > ssmax)
+		{
+			out[0] = _Aopt[ia];
+			out[1] = _Bopt[ia];
+			out[2] = _Copt[ia];
+			out[3] = _Dopt[ia];
+			out[4] = _Eopt[ia];
+			out[5] = _stack[ia];
+			out[6] = smax[ia];
+			ssmax = smax[ia];
+		}
+	}
+}
+

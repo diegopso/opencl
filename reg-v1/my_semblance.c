@@ -61,10 +61,12 @@ float my_semblance_2d(my_aperture_t *ap,
         float t0, float m0, float h0,
         float *stack)
 {
+//    printf("inicio my_semblance\n");
 
     /* Get the sample rate from the first trace inside the aperture,
        it is the same value for all other traces */
     my_su_trace_t tr = ap->traces[0];
+//    printf("my_tr: ", tr.dt);
     float dt = (float) tr.dt / 1000000;
     float idt = 1 / dt;
 
@@ -75,18 +77,20 @@ float my_semblance_2d(my_aperture_t *ap,
 
     /* Calculate the semblance  */
 
+//    printf("apt: %f, tau: %d, w: %d\n", ap->ap_t, tau, w);
+
     float num[w];
     float den[w];
     for(int i=0;i<w;i++) {
 	  num[i]=0;
 	  den[i]=0;
     }
-    /* memset(&num[0], 0, sizeof(num)); */
-    /* memset(&den[0], 0, sizeof(den)); */
+    //memset(&num[0], 0, sizeof(num));
+    //memset(&den[0], 0, sizeof(den));
     int M = 0, skip = 0;
     float _stack = 0;
 
-    int len = sizeof(ap->traces)/sizeof(ap->traces[0]);
+    int len = ap->traces_len;
     for (int i = 0; i < len; i++) {
         tr = ap->traces[i];
 

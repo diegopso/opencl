@@ -23,8 +23,6 @@
 #define DATA_SIZE 1660
 
 
-void checkError(cl_int err, const char *operation);
-
 /*Transform aperture_t to my_aperture_t */
 my_aperture_t transform(aperture_t ap) {
   my_aperture_t my_ap;
@@ -40,7 +38,9 @@ my_aperture_t transform(aperture_t ap) {
 
       /* copy tr data value */
       for(int j = 0; j < DATA_SIZE ; j ++) {
-    	 my_tr.data[j] = tr->data[j];
+	  float *v = malloc (sizeof(float));
+	  memcpy (v, &tr->data[j], sizeof(float));
+	  my_tr.data[j] = *v;
       }
 
       my_tr.dt = tr->dt;
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     size_t source_size = fread(kernelSource, 1, MAXSOURCE, file);
     
     //Device input buffers
-    cl_mem d_my_ap;
+    cl_mem d_ap;
     cl_mem d_p0, d_p1, d_np, d_aopt, d_bopt, d_copt, d_dopt, d_eopt, d_stack, d_smax;
     //Device output buffer
     cl_mem  d_out;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
     cl_uint platformCount;
     
     //Tamanho em bytes de cada vetor
-    size_t bytes_my_ap = sizeof(my_aperture_t);
+    size_t bytes_ap = sizeof(aperture_t);
     size_t bytes_p0 = sizeof(float) * n;
     size_t bytes_p1 = sizeof(float) * n;
     size_t bytes_np = sizeof(int) * n;
@@ -167,17 +167,12 @@ int main(int argc, char *argv[])
     
 
 	//Numero de workitems em cada local work group (local size)
-//    size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
-//
-//    size_t globalSize[3] = {
-//        ceil((float)np[0] / (float)localSize[0]),
-//        ceil((float)np[1] / (float)localSize[1]),
-//        ceil((float)np[2] / (float)localSize[2])
-//    };
-
-    size_t localSize[3] = {1,1,1};
-
-    size_t globalSize[3] = {20,20,20};
+    size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
+    size_t globalSize[3] = {
+        ceil((float)np[0] / (float)localSize[0]),
+        ceil((float)np[1] / (float)localSize[1]),
+        ceil((float)np[2] / (float)localSize[2])
+    };
     
 
     // Bind to platforms
@@ -198,8 +193,6 @@ int main(int argc, char *argv[])
 
 	}
 	
-	checkError(err, "get device");
-
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not find a valid device.");
 		exit (3);
@@ -241,11 +234,11 @@ int main(int argc, char *argv[])
 		cl_int logStatus;
 		char* buildLog = NULL;
 		size_t buildLogSize = 0;
-		logStatus = clGetProgramBuildInfo (program, device_id, CL_PROGRAM_BUILD_LOG, buildLogSize, NULL, &buildLogSize);
+		logStatus = clGetProgramBuildInfo (program, device_id, CL_PROGRAM_BUILD_LOG, buildLogSize, buildLog, &buildLogSize);
 		buildLog = (char*)malloc(buildLogSize);
 		memset(buildLog, 0, buildLogSize);
 		logStatus = clGetProgramBuildInfo (program, device_id, CL_PROGRAM_BUILD_LOG, buildLogSize, buildLog, NULL);
-		printf("ERROR %d (logsz = %d): [[%s]]\n", err, buildLogSize, buildLog);
+		printf("%s", buildLog);
 		free(buildLog);
 		return err;
 	} else if (err!=0) {
@@ -263,27 +256,21 @@ int main(int argc, char *argv[])
 	}
 	
 
-
+	/*
 	// Create the input and output arrays in device memory for our calculation
-	d_my_ap = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_my_ap, NULL, NULL);
 	d_p0 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p0, NULL, NULL);
 	d_p1 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p1, NULL, NULL);
 	d_np = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_np, NULL, NULL);
 	d_out = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_out, NULL, NULL);
 	
-
 	// Write our data set into the input array in device memory
-
-	// Write our data set into the input array in device memory
-
-	err = clEnqueueWriteBuffer(queue, d_my_ap, CL_TRUE, 0, bytes_my_ap, (const void*)&my_ap, 0, NULL, NULL);
 	err = clEnqueueWriteBuffer(queue, d_p0, CL_TRUE, 0, bytes_p0, p0, 0, NULL, NULL);
 	err = clEnqueueWriteBuffer(queue, d_p1, CL_TRUE, 0, bytes_p1, p1, 0, NULL, NULL);
 	err = clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL, NULL);
-
-
+	*/
+	/*
 	// Set the arguments to our compute kernel
-	err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_my_ap);
+	err |= clSetKernelArg(kernel, 0, sizeof(my_aperture_t), &my_ap);
 	err |= clSetKernelArg(kernel, 1, sizeof(float), &m0);
 	err |= clSetKernelArg(kernel, 2, sizeof(float), &h0);
 	err |= clSetKernelArg(kernel, 3, sizeof(float), &t0);
@@ -298,8 +285,15 @@ int main(int argc, char *argv[])
 	err |= clSetKernelArg(kernel, 12, np[0] * sizeof(cl_float), NULL);//_Eopt
 	err |= clSetKernelArg(kernel, 13, np[0] * sizeof(cl_float), NULL);//_stack
 	err |= clSetKernelArg(kernel, 14, np[0] * sizeof(cl_float), NULL);//smax
+	*/
 	
+	d_ap = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_ap, NULL, NULL);
+	d_out = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_out, NULL, NULL);
 
+	err = clEnqueueWriteBuffer(queue, d_ap, CL_TRUE, 0, bytes_ap, p0, 0, NULL, NULL);
+
+	err |= clSetKernelArg(kernel, 0, sizeof(my_aperture_t), &d_ap);
+	err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_out);
 	
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not set kernel args.");
@@ -317,6 +311,7 @@ int main(int argc, char *argv[])
 	// Wait for the command queue to get serviced before reading back results
 	clFinish(queue);
 	
+	err |= clSetKernelArg(kernel, 7, sizeof(cl_mem), &d_out);
 	// Read the results from the device
 	clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL, NULL );
 	
@@ -339,15 +334,4 @@ int main(int argc, char *argv[])
     printf("\n");
 
     return 0;
-}
-
-
-
-void checkError(cl_int err, const char *operation)
-{
-  if (err != CL_SUCCESS)
-  {
-    fprintf(stderr, "Error during operation '%s': %d\n", operation, err);
-    exit(1);
-  }
 }

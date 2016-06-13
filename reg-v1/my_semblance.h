@@ -22,6 +22,7 @@ struct my_aperture
 {
   float ap_t;
   my_su_trace_t traces[TRACES_MAX_SIZE];
+  int traces_len;
 };
 
 float my_semblance_2d (my_aperture_t *ap, float A, float B, float C, float D, float E,

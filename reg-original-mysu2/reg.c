@@ -16,31 +16,22 @@
 
 #define DATA_SIZE 1660
 
+/*Transform aperture_t to my_aperture_t */
 my_aperture_t transform(aperture_t ap) {
-  puts("init transform");
   my_aperture_t my_ap;
 
-  //copy ap_t value
+  /* copy ap_t value */
   my_ap.ap_t = ap.ap_t;
-//  printf("ap_t: %f\n", my_ap.ap_t);
-
-  int len = ap.traces.len;
-//  printf("ap.traces.len= %d\n", len);
 
   /* copy tr value */
   for (int i = 0; i < ap.traces.len; i++) {
 
-//      printf("ap_t %d: %f\n",i, my_ap.ap_t);
       su_trace_t *tr = vector_get(ap.traces, i);
       my_su_trace_t my_tr;
 
-      int len_tr_data = sizeof(tr->data)/sizeof(tr->data[0]);
-
       /* copy tr data value */
       for(int j = 0; j < DATA_SIZE ; j ++) {
-	  float *v = malloc (sizeof(float));
-	  memcpy (v, &tr->data[j], sizeof(float));
-	  my_tr.data[j] = *v;
+    	 my_tr.data[j] = tr->data[j];
       }
 
       my_tr.dt = tr->dt;
@@ -52,6 +43,7 @@ my_aperture_t transform(aperture_t ap) {
 
       my_ap.traces[i] = my_tr;
   }
+  my_ap.traces_len = ap.traces.len;
 
   return my_ap;
 }
