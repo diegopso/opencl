@@ -67,7 +67,6 @@ float semblance_2d(aperture_t *ap,
         /* Compute the moveout time ignoring mx and hx because the data is 2D */
         float t = time_2d(A, B, C, D, E, t0, m0, my, h0, hy);
         int it = (int)(t * idt);
-
         /* Check if the time belongs to the range of the trace */
         if (it - tau >= 0 && it + tau < tr->ns) {
             for (int j = 0; j < w; j++) {

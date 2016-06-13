@@ -41,6 +41,7 @@ void compute_max(aperture_t *ap, float m0, float h0, float t0,
         for (int ib = 0; ib < np[1]; ib++) {
 
             float b = p0[1] + ((float)ib / (float)np[1])*(p1[1]-p0[1]);
+                  b = p0[1] + ((float)ib / (float)np[1])*(p1[1]-p0[1]);
             for (int ic = 0; ic < np[2]; ic++) {
 
                 float c = p0[2] + ((float)ic / (float)np[2])*(p1[2]-p0[2]);
@@ -54,6 +55,7 @@ void compute_max(aperture_t *ap, float m0, float h0, float t0,
                         /* Check the fit of the parameters to the data and update the 
                          * maximum for that point if necessary */
                         float s = semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
+                        // printf("%d, %d, %d, %d, %d => %f\n", ia, ib, ic, id, ie, s);
                         if (s > smax[ia]) {
                             smax[ia] = s;
                             _stack[ia] = st;
