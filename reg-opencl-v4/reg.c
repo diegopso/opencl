@@ -61,7 +61,7 @@ my_aperture_t transform(aperture_t ap) {
 int main(int argc, char *argv[])
 {
     int i;
-    
+
     int n = 5;
 	int outSize = 7;
     /* A, B, C, D, E */
@@ -81,8 +81,8 @@ int main(int argc, char *argv[])
     float t0 = atof(argv[3]);
     float tau = strtof(argv[4], NULL);
 
-    /* p0 is where the search starts, p1 is where the search ends and np is the 
-     * number of points in between p0 and p1 to do the search */   
+    /* p0 is where the search starts, p1 is where the search ends and np is the
+     * number of points in between p0 and p1 to do the search */
     for (i = 0; i < 5; i++) {
         p0[i] = atof(argv[5 + 3*i]);
         p1[i] = atof(argv[5 + 3*i + 1]);
@@ -119,27 +119,36 @@ int main(int argc, char *argv[])
         vector_push(ap.traces, &vector_get(traces, i));
 
     my_aperture_t my_ap = transform(ap);
-	//puts("fim transform\n");
+	puts("fim transform\n");
+
+
+
+    float _Aopt[np[0]];
+    float _Bopt[np[0]];
+    float _Copt[np[0]];
+    float _Dopt[np[0]];
+    float _Eopt[np[0]];
+    float _stack[np[0]];
 
     /*-------------------------------------------------------------------------*/
 
     char *kernelSource = (char *) malloc(MAXSOURCE * sizeof(char));
-    
+
     FILE * file = fopen("kernel.cl", "r");
     if(file == NULL) {
         printf("Error: open the kernel file (kernel.cl)\n");
         exit(1);
     }
-    
+
     // Read kernel code
     size_t source_size = fread(kernelSource, 1, MAXSOURCE, file);
-    
+
     //Device input buffers
     cl_mem d_my_ap;
     cl_mem d_p0, d_p1, d_np, d_aopt, d_bopt, d_copt, d_dopt, d_eopt, d_stack, d_smax;
     //Device output buffer
     cl_mem  d_out;
-    
+
     cl_int err;
 
     char deviceName[MAX_DEVICE_NAME_SIZE];
@@ -151,7 +160,7 @@ int main(int argc, char *argv[])
     cl_kernel kernel;
     cl_platform_id *platforms;
     cl_uint platformCount;
-    
+
     //Tamanho em bytes de cada vetor
     size_t bytes_my_ap = sizeof(my_aperture_t);
     size_t bytes_p0 = sizeof(float) * n;
@@ -159,7 +168,7 @@ int main(int argc, char *argv[])
     size_t bytes_np = sizeof(int) * n;
     size_t bytes_opt = sizeof(float) * np[0];
 	size_t bytes_out = sizeof(float) * outSize;
-    
+
 
 	//Numero de workitems em cada local work group (local size)
 //    size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
@@ -170,10 +179,10 @@ int main(int argc, char *argv[])
 //        ceil((float)np[2] / (float)localSize[2])
 //    };
 
-    size_t localSize[3] = {2,2,2};
+    size_t localSize[3] = {5,5,5};
 
     size_t globalSize[3] = {20,20,20};
-    
+
 
     // Bind to platforms
 	clGetPlatformIDs(0, NULL, &platformCount);
@@ -181,10 +190,10 @@ int main(int argc, char *argv[])
 		printf("Error, cound not find any OpenCL platforms on the system.\n");
 		exit (2);
 	}
-	
+
 	platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
 	clGetPlatformIDs(platformCount,platforms, NULL);
-	
+
 	// Find first device that works
 	err = 1;
 	for (i = 0; i < platformCount && err !=CL_SUCCESS; i++) {
@@ -192,42 +201,44 @@ int main(int argc, char *argv[])
 		err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
 
 	}
-	
+
 	checkError(err, "get device");
 
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not find a valid device.");
 		exit (3);
 	}
-	
+
 	err = clGetDeviceInfo(device_id, CL_DEVICE_NAME,MAX_DEVICE_NAME_SIZE, deviceName, NULL);
 	printf("Device: %s \n",deviceName);
-	
+
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not read the info for device.");
 		exit (4);
 	}
-	
+
 	// Create a context
 	context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
-	
+
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not create the context.");
 		exit (5);
 	}
-	
+
 	// Create a command queue
-	queue = clCreateCommandQueueWithProperties(context, device_id, 0, &err);
-	
+	queue = clCreateCommandQueue(context, device_id, 0, &err);
+
 	// Create the compute program from the source buffer
 	program = clCreateProgramWithSource(context, 1,
 			(const char **) & kernelSource,(const size_t *) &source_size, &err);
-			
+
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not create program with source.");
 		exit (6);
 	}
-			
+
+	puts("createProgram");
+
 	// Build the program executable " --disable-multilib "
 	err = clBuildProgram(program, 0,NULL, NULL, NULL, NULL);
 	if (err == CL_BUILD_PROGRAM_FAILURE) {
@@ -245,16 +256,16 @@ int main(int argc, char *argv[])
 		printf("Error, could not build program.\n");
 		exit (7);
 	}
-	
+
 	// Create the compute kernel in the program we wish to run
-	
+
 	kernel = clCreateKernel(program, "calculate", &err);
-	
+
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not create the kernel.");
 		exit (6);
 	}
-	
+
 
 	float smax[np[0]];
 	for(int i = 0; i < np[0]; i++){
@@ -269,13 +280,13 @@ int main(int argc, char *argv[])
 	d_np = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_np, NULL, NULL);
 	d_out = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_out, NULL, NULL);
 
-	d_aopt = clCreateBuffer(context, CL_MEM_READ_WRITE , bytes_smax, NULL, NULL);
-	d_bopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_copt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_dopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_eopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_stack = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_smax = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_smax, NULL, NULL);
+	d_aopt = clCreateBuffer(context, CL_MEM_WRITE_ONLY , bytes_smax, NULL, NULL);
+	d_bopt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_copt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_dopt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_eopt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_stack = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_smax = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
 
 	// Write our data set into the input array in device memory
 
@@ -301,25 +312,25 @@ int main(int argc, char *argv[])
 	err |= clSetKernelArg(kernel, 12, np[0] * sizeof(cl_float), &d_eopt);//_Eopt
 	err |= clSetKernelArg(kernel, 13, np[0] * sizeof(cl_float), &d_stack);//_stack
 	err |= clSetKernelArg(kernel, 14, np[0] * sizeof(cl_float), &d_smax);//smax
-	
 
-	
+
+
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not set kernel args.");
 		exit (7);
 	}
-	
+
 	err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, (const size_t *)globalSize,  (const size_t *)localSize, 0, NULL, NULL);
 	// Execute the kernel over the entire range of the data set
-	
+
 	if (err !=CL_SUCCESS) {
 		printf("Error, could not enqueue commands. %d\n", err);
 		exit (8);
 	}
-	
+
 	// Wait for the command queue to get serviced before reading back results
 	clFinish(queue);
-	
+
 	// Read the results from the device
 	clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL, NULL );
 

@@ -28,6 +28,14 @@ __kernel void calculate(
 	float b = p0[1] + ((float)ib / (float)np[1]) * (p1[1]-p0[1]);
 	float c = p0[2] + ((float)ic / (float)np[2]) * (p1[2]-p0[2]);
 
+	float l_Aopt = 0;
+	float l_Bopt = 0;
+	float l_Copt = 0;
+	float l_Dopt = 0;
+	float l_Eopt = 0;
+	float l_stack = 0;
+	float l_smax = smax[ia];
+
 	for (int id = 0; id < np[3]; id++)
 	{
 
@@ -42,33 +50,43 @@ __kernel void calculate(
 			 * maximum for that point if necessary */
 			float s = my_semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
 
-			if (s > smax[ia])
+			if (s > l_smax)
 			{
-				smax[ia] = s;
-				_stack[ia] = st;
-				_Aopt[ia] = a;
-				_Bopt[ia] = b;
-				_Copt[ia] = c;
-				_Dopt[ia] = d;
-				_Eopt[ia] = e;
+				l_Aopt = a;
+				l_Bopt = b;
+				l_Copt = c;
+				l_Dopt = d;
+				l_Eopt = e;
+				l_stack = st;
+				l_smax = s;
 			}
 		}
 	}
 
-	/* Now find the best fit between different 'A' values */
+	if(l_smax > smax[ia]) {
+		_Aopt[ia] = l_Aopt;
+		_Bopt[ia] = l_Bopt;
+		_Copt[ia] = l_Copt;
+		_Dopt[ia] = l_Dopt;
+		_Eopt[ia] = l_Eopt;
+		_stack[ia] = l_stack;
+		smax[ia] = l_smax;
+	}
+
+
 	float ssmax = -1.0;
-	for (int ia = 0; ia < np[0]; ia++)
+	for (int i = 0; i < np[0]; i ++)
 	{
-		if (smax[ia] > ssmax)
+		if (smax[i] > ssmax)
 		{
-			out[0] = _Aopt[ia];
-			out[1] = _Bopt[ia];
-			out[2] = _Copt[ia];
-			out[3] = _Dopt[ia];
-			out[4] = _Eopt[ia];
-			out[5] = _stack[ia];
-			out[6] = smax[ia];
-			ssmax = smax[ia];
+			out[0] = _Aopt[i];
+			out[1] = _Bopt[i];
+			out[2] = _Copt[i];
+			out[3] = _Dopt[i];
+			out[4] = _Eopt[i];
+			out[5] = _stack[i];
+			out[6] = smax[i];
+			ssmax = smax[i];
 		}
 	}
 }
