@@ -1,0 +1,70 @@
+#Specify the version being used aswell as the language
+cmake_minimum_required(VERSION 2.6)
+#Name your project here
+project(reg)
+
+#need to include FindOPENCL.cmake to
+#SET( CMAKE_MODULE_PATH ${reg_SOURCE_DIR}/../cmake)
+
+message("CMake module path: ${CMAKE_MODULE_PATH}\n")
+
+SET(OPENCL_DIRECTORY "/opt/altera/14.1/hld/host/include/")
+
+SET(OPENCL_FLAG "-lm")
+
+#Sends the flag to the gcc compiler
+add_definitions(-std=gnu99
+    -D_FILE_OFFSET_BITS=64
+    -D_LARGEFILE64_SOURCE
+    ${OPENCL_FLAG})
+
+#if (WITH_OPENMP)
+#  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+#endif()
+
+#set(WITH_OPENMP True CACHE BOOL "True to enable OpenMP")
+
+
+#if (WITH_OPENMP)
+#  find_package(OpenMP)
+#  if (NOT OPENMP_FOUND)
+#    set(WITH_OPENMP False)
+#  endif()
+#endif()
+
+# Handle OpenCL
+
+find_package(OpenCL REQUIRED)
+
+INCLUDE_DIRECTORIES( 
+    ${OPENCL_DIRECTORY}
+)
+
+include_directories(${OpenCL_INCLUDE_DIRS})
+
+link_directories(${OpenCL_LIBRARY})
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenCL_C_FLAGS}")
+
+message("include directories: \n")
+get_directory_property(includes INCLUDE_DIRECTORIES)
+message("${includes}\n")
+
+message(STATUS "OpenCL found: ${OpenCL_FOUND}")
+message(STATUS "OpenCL includes: ${OpenCL_INCLUDE_DIRS}")
+message(STATUS "OpenCL CXX includes: ${OpenCL_LIBRARIES}")
+message(STATUS "OpenCL libraries: ${OpenCL_VERSION_STRING}")
+message(STATUS "OpenCL version major: ${OpenCL_VERSION_MAJOR}")
+message(STATUS "OpenCL version minor: ${OpenCL_VERSION_MINOR}")
+message(STATUS "OpenCL include dir: ${OpenCL_INCLUDE_DIR}")
+message(STATUS "OpenCL library: ${OpenCL_LIBRARY}")
+
+include_directories(${CMAKE_SOURCE_DIR})
+
+#This tells CMake to ... and name it reg
+add_executable(reg
+    reg.c
+    semblance.c
+    su.c)
+
+target_link_libraries(reg m ${OPENCL_LIBRARIES})

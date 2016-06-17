@@ -28,14 +28,23 @@ __kernel void calculate(
 	float b = p0[1] + ((float)ib / (float)np[1]) * (p1[1]-p0[1]);
 	float c = p0[2] + ((float)ic / (float)np[2]) * (p1[2]-p0[2]);
 
-	for (int id = 0; id < np[3]; id++)
+	float p03 = p0[3];
+	float mul_id = (p1[3] - p03 ) / (float)np[3];
+	float p04 = p0[4];
+	float mul_ie = (p1[4]-p0[4]) / (float)np[4];
+
+	int np3 = np[3];
+	int np4 = np[4];
+
+	float d = p03 - mul_id;
+	float e = p04 - mul_ie;
+
+	for (int id = 0; id < np3; id++)
 	{
-
-		float d = p0[3] + ((float)id / (float)np[3])*(p1[3]-p0[3]);
-		for (int ie = 0; ie < np[4]; ie++)
+		d += mul_id;
+		for (int ie = 0; ie < np4; ie++)
 		{
-
-			float e = p0[4] + ((float)ie / (float)np[4])*(p1[4]-p0[4]);
+			e += mul_ie;
 
 			float st;
 			/* Check the fit of the parameters to the data and update the
