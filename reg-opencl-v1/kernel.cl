@@ -24,6 +24,8 @@ __kernel void calculate(
 	int ib = get_global_id(1);
 	int ic = get_global_id(2);
 
+	printf("ia: %d, ib: %d, ic:%d \n", ia, ib, ic);
+
 	float a = p0[0] + ((float)ia / (float)np[0]) * (p1[0]-p0[0]);
 	float b = p0[1] + ((float)ib / (float)np[1]) * (p1[1]-p0[1]);
 	float c = p0[2] + ((float)ic / (float)np[2]) * (p1[2]-p0[2]);

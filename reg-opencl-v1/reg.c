@@ -168,10 +168,6 @@ int main(int argc, char *argv[]) {
 	//        ceil((float)np[2] / (float)localSize[2])
 	//    };
 
-	size_t localSize[3] = { 5, 5, 5 };
-
-	size_t globalSize[3] = { 20, 20, 20 };
-
 	// Bind to platforms
 	clGetPlatformIDs(0, NULL, &platformCount);
 	if (platformCount == 0) {
@@ -225,20 +221,25 @@ int main(int argc, char *argv[]) {
 		exit(5);
 	}
 
-//	// Create a command queue
-//#ifdef CL_VERSION_2_0
-//	cl_queue_properties queue_properties[] = {
-//			CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
-//			0};
-//	queue = clCreateCommandQueueWithProperties(context, device_id,
-//			queue_properties , &err);
-//#else
-//	queue = clCreateCommandQueue(context, device_id,
-//			CL_QUEUE_PROFILING_ENABLE, &err);
-//#endif
-//
+	if(device_type == 0) {
+	// Create a command queue
+#ifdef CL_VERSION_2_0
+	cl_queue_properties queue_properties[] = {
+			CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
+			0};
+	queue = clCreateCommandQueueWithProperties(context, device_id,
+			queue_properties , &err);
+#else
+	queue = clCreateCommandQueue(context, device_id,
+			CL_QUEUE_PROFILING_ENABLE, &err);
+#endif
+
+
+	} else {
+
 	queue = clCreateCommandQueue(context, device_id,
 				CL_QUEUE_PROFILING_ENABLE, &err);
+	}
 
 	// Create the compute program from the source buffer
 	program = clCreateProgramWithSource(context, 1,
@@ -294,19 +295,24 @@ int main(int argc, char *argv[]) {
 	d_np = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_np, NULL, NULL);
 	d_out = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_out, NULL, NULL);
 
-	d_aopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_bopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_copt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_dopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_eopt = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
-	d_stack = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL,
+	puts("antes JOAQUIM\n");
+
+	d_aopt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_bopt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_copt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_dopt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_eopt = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL, NULL);
+	d_stack = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes_smax, NULL,
 			NULL);
-	d_smax = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_smax, NULL, NULL);
+	d_smax = clCreateBuffer(context, CL_MEM_READ_WRITE, bytes_smax, NULL, NULL);
+
+	puts("antes OTHER\n");
 
 	// Write our data set into the input array in device memory
-
 	err = clEnqueueWriteBuffer(queue, d_my_ap, CL_TRUE, 0, bytes_my_ap,
 			(const void*) &my_ap, 0, NULL, NULL);
+
+	puts("antes WRITE\n");
 
 	err |= clEnqueueWriteBuffer(queue, d_p0, CL_TRUE, 0, bytes_p0, p0, 0, NULL,
 			NULL);
@@ -316,16 +322,18 @@ int main(int argc, char *argv[]) {
 			NULL);
 	err |= clEnqueueWriteBuffer(queue, d_smax, CL_TRUE, 0, bytes_smax, smax, 0,
 			NULL, NULL);
-
 	checkError(err, "clEnqueueWriteBuffer");
+
+	puts("DEPOIS WRITE\n");
+
+//	err = clWaitForEvents(1, &event1);
 
 	// Set the arguments to our compute kernel
 	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_my_ap);
 	checkError(err, "setarg0");
 
-	err |= clSetKernelArg(kernel, 1, sizeof(float), &m0);
+	err = clSetKernelArg(kernel, 1, sizeof(float), &m0);
 	checkError(err, "setarg1");
-
 	err = clSetKernelArg(kernel, 2, sizeof(float), &h0);
 	checkError(err, "setarg2");
 	err = clSetKernelArg(kernel, 3, sizeof(float), &t0);
@@ -353,6 +361,11 @@ int main(int argc, char *argv[]) {
 	err = clSetKernelArg(kernel, 14, sizeof(cl_mem), &d_smax); //smax
 	checkError(err, "setarg14");
 
+	puts("ASDASDSDA");
+
+	size_t localSize[3] = {2, 2, 2};
+
+	size_t globalSize[3] = { 20, 20, 20 };
 
 	cl_event event;
 	err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL,
@@ -361,20 +374,23 @@ int main(int argc, char *argv[]) {
 
 	// Execute the kernel over the entire range of the data set
 
-	if (err != CL_SUCCESS) {
-		printf("Error, could not enqueue commands. %d\n", err);
-		exit(8);
-	}
+	checkError(err, "Error, could not enqueue commands.");
+	puts("aaaaaaaaaaaaaaa");
+
+	clFlush(queue);
+	puts("flush");
 
 	// Wait for the command queue to get serviced before reading back results
 	clFinish(queue);
+
+	puts("fim clFinish\n");
 
 	// Read the results from the device
 	clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL,
 			NULL);
 
 	//profiling
-	clWaitForEvents(1, &event);
+	//clWaitForEvents(1, &event);
 
 	cl_ulong time_start, time_end;
 	double total_time;
@@ -386,6 +402,23 @@ int main(int argc, char *argv[]) {
 	total_time = time_end - time_start;
 	printf("\nExecution time in milliseconds = %0.3f ms\n",
 			(total_time / 1000000.0));
+
+	clReleaseKernel(kernel);
+	clReleaseProgram(program);
+	clReleaseMemObject(d_my_ap);
+	clReleaseMemObject(d_p0);
+	clReleaseMemObject(d_p1);
+	clReleaseMemObject(d_np);
+	clReleaseMemObject(d_out);
+	clReleaseMemObject(d_aopt);
+	clReleaseMemObject(d_bopt);
+	clReleaseMemObject(d_copt);
+	clReleaseMemObject(d_dopt);
+	clReleaseMemObject(d_eopt);
+	clReleaseMemObject(d_stack);
+	clReleaseMemObject(d_smax);
+	clReleaseCommandQueue(queue);
+	clReleaseContext(context);
 
 	/*-------------------------------------------------------------------------*/
 
