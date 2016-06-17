@@ -225,17 +225,20 @@ int main(int argc, char *argv[]) {
 		exit(5);
 	}
 
-	// Create a command queue
-#ifdef CL_VERSION_2_0
-	cl_queue_properties queue_properties[] = {
-			CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
-			0};
-	queue = clCreateCommandQueueWithProperties(context, device_id,
-			queue_properties , &err);
-#else
-	queue = clCreateCommandQueueWithProperties(context, device_id,
-			CL_QUEUE_PROFILING_ENABLE, &err);
-#endif
+//	// Create a command queue
+//#ifdef CL_VERSION_2_0
+//	cl_queue_properties queue_properties[] = {
+//			CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
+//			0};
+//	queue = clCreateCommandQueueWithProperties(context, device_id,
+//			queue_properties , &err);
+//#else
+//	queue = clCreateCommandQueue(context, device_id,
+//			CL_QUEUE_PROFILING_ENABLE, &err);
+//#endif
+//
+	queue = clCreateCommandQueue(context, device_id,
+				CL_QUEUE_PROFILING_ENABLE, &err);
 
 	// Create the compute program from the source buffer
 	program = clCreateProgramWithSource(context, 1,
@@ -304,6 +307,7 @@ int main(int argc, char *argv[]) {
 
 	err = clEnqueueWriteBuffer(queue, d_my_ap, CL_TRUE, 0, bytes_my_ap,
 			(const void*) &my_ap, 0, NULL, NULL);
+
 	err |= clEnqueueWriteBuffer(queue, d_p0, CL_TRUE, 0, bytes_p0, p0, 0, NULL,
 			NULL);
 	err |= clEnqueueWriteBuffer(queue, d_p1, CL_TRUE, 0, bytes_p1, p1, 0, NULL,
@@ -313,27 +317,42 @@ int main(int argc, char *argv[]) {
 	err |= clEnqueueWriteBuffer(queue, d_smax, CL_TRUE, 0, bytes_smax, smax, 0,
 			NULL, NULL);
 
-	// Set the arguments to our compute kernel
-	err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_my_ap);
-	err |= clSetKernelArg(kernel, 1, sizeof(float), &m0);
-	err |= clSetKernelArg(kernel, 2, sizeof(float), &h0);
-	err |= clSetKernelArg(kernel, 3, sizeof(float), &t0);
-	err |= clSetKernelArg(kernel, 4, sizeof(cl_mem), &d_p0);
-	err |= clSetKernelArg(kernel, 5, sizeof(cl_mem), &d_p1);
-	err |= clSetKernelArg(kernel, 6, sizeof(cl_mem), &d_np);
-	err |= clSetKernelArg(kernel, 7, sizeof(cl_mem), &d_out);
-	err |= clSetKernelArg(kernel, 8, np[0] * sizeof(cl_float), &d_aopt); //_Aopt
-	err |= clSetKernelArg(kernel, 9, np[0] * sizeof(cl_float), &d_bopt); //_Bopt
-	err |= clSetKernelArg(kernel, 10, np[0] * sizeof(cl_float), &d_copt); //_Copt
-	err |= clSetKernelArg(kernel, 11, np[0] * sizeof(cl_float), &d_dopt); //_Dopt
-	err |= clSetKernelArg(kernel, 12, np[0] * sizeof(cl_float), &d_eopt); //_Eopt
-	err |= clSetKernelArg(kernel, 13, np[0] * sizeof(cl_float), &d_stack); //_stack
-	err |= clSetKernelArg(kernel, 14, np[0] * sizeof(cl_float), &d_smax); //smax
+	checkError(err, "clEnqueueWriteBuffer");
 
-	if (err != CL_SUCCESS) {
-		printf("Error, could not set kernel args.");
-		exit(7);
-	}
+	// Set the arguments to our compute kernel
+	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_my_ap);
+	checkError(err, "setarg0");
+
+	err |= clSetKernelArg(kernel, 1, sizeof(float), &m0);
+	checkError(err, "setarg1");
+
+	err = clSetKernelArg(kernel, 2, sizeof(float), &h0);
+	checkError(err, "setarg2");
+	err = clSetKernelArg(kernel, 3, sizeof(float), &t0);
+	checkError(err, "setarg3");
+	err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &d_p0);
+	checkError(err, "setarg4");
+	err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &d_p1);
+	checkError(err, "setarg5");
+	err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &d_np);
+	checkError(err, "setarg6");
+	err = clSetKernelArg(kernel, 7, sizeof(cl_mem), &d_out);
+	checkError(err, "setarg7");
+	err = clSetKernelArg(kernel, 8, sizeof(cl_mem), &d_aopt); //_Aopt
+	checkError(err, "setarg8");
+	err = clSetKernelArg(kernel, 9, sizeof(cl_mem), &d_bopt); //_Bopt
+	checkError(err, "setarg9");
+	err = clSetKernelArg(kernel, 10, sizeof(cl_mem), &d_copt); //_Copt
+	checkError(err, "setarg10");
+	err = clSetKernelArg(kernel, 11, sizeof(cl_mem), &d_dopt); //_Dopt
+	checkError(err, "setarg11");
+	err = clSetKernelArg(kernel, 12, sizeof(cl_mem), &d_eopt); //_Eopt
+	checkError(err, "setarg12");
+	err = clSetKernelArg(kernel, 13, sizeof(cl_mem), &d_stack); //_stack
+	checkError(err, "setarg13");
+	err = clSetKernelArg(kernel, 14, sizeof(cl_mem), &d_smax); //smax
+	checkError(err, "setarg14");
+
 
 	cl_event event;
 	err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL,

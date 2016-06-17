@@ -4,6 +4,10 @@
 # define MAX(a, b) ((a)>(b)?(a):(b))
 #endif
 
+// #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+//
+//float sqrtf(float x);
+
 static float my_get_scalco(__global my_su_trace_t *tr) {
 	if (tr->scalco == 0)
 		return 1;
@@ -24,8 +28,6 @@ void my_su_get_halfoffset(__global my_su_trace_t *tr, float *hx, float *hy) {
 	*hy = s * (tr->gy - tr->sy) * 0.5;
 }
 
-float sqrtf(float x);
-
 /* The moveout time function tells the time when a wave, propagating from
  * (m0,h0) at t0 to the tace */
 static float time_2d(float A, float B, float C, float D, float E, float t0,
@@ -39,7 +41,7 @@ static float time_2d(float A, float B, float C, float D, float E, float t0,
 	if (t2 < 0)
 		return -1;
 	else
-		return sqrtf(t2);
+		return sqrt(t2);
 }
 
 float interpol_linear(float x0, float x1, float y0, float y1, float x) {
