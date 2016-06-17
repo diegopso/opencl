@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 	int np[n];
 	float out[outSize];
 
-	if (argc != 21) {
+	if (argc != 22) {
 		fprintf(stderr, "Usage: %s M0 H0 T0 TAU A0 A1 NA B0 B1 NB "
 				"C0 C1 NC D0 D1 ND E0 E1 NE INPUT\n", argv[0]);
 		exit(1);
@@ -97,42 +97,44 @@ int main(int argc, char *argv[]) {
 
 	su_trace_t tr;
 	vector_t(su_trace_t) traces;
-		vector_init(traces);
+	vector_init(traces);
 
-		while (su_fgettr(fp, &tr)) {
-			vector_push(traces, tr);
-		}
+	while (su_fgettr(fp, &tr)) {
+		vector_push(traces, tr);
+	}
 
-		/* Construct the aperture structure from the traces, which is a vector
-		 * containing pointers to traces */
+	/* Construct the aperture structure from the traces, which is a vector
+	 * containing pointers to traces */
 
-		aperture_t ap;
-		ap.ap_m = 0;
-		ap.ap_h = 0;
-		ap.ap_t = tau;
-		vector_init(ap.traces);
-		for (int i = 0; i < traces.len; i++)
+	aperture_t ap;
+	ap.ap_m = 0;
+	ap.ap_h = 0;
+	ap.ap_t = tau;
+	vector_init(ap.traces);
+	for (int i = 0; i < traces.len; i++)
 		vector_push(ap.traces, &vector_get(traces, i));
 
-		my_aperture_t my_ap = transform(ap);
-		puts("fim transform\n");
+	my_aperture_t my_ap = transform(ap);
+	puts("fim transform\n");
 
-		/*-------------------------------------------------------------------------*/
+	/*-------------------------------------------------------------------------*/
 
-		char *kernelSource = (char *) malloc(MAXSOURCE * sizeof(char));
+	int device_type = atof(argv[21]);
 
-		FILE * file = fopen("kernel.cl", "r");
-		if(file == NULL) {
-			printf("Error: open the kernel file (kernel.cl)\n");
-			exit(1);
-		}
+	char *kernelSource = (char *) malloc(MAXSOURCE * sizeof(char));
 
-		// Read kernel code
-				size_t source_size = fread(kernelSource, 1, MAXSOURCE, file);
+	FILE * file = fopen("kernel.cl", "r");
+	if(file == NULL) {
+		printf("Error: open the kernel file (kernel.cl)\n");
+		exit(1);
+	}
 
-				//Device input buffers
-				cl_mem d_my_ap;
-				cl_mem d_p0,
+	// Read kernel code
+	size_t source_size = fread(kernelSource, 1, MAXSOURCE, file);
+
+	//Device input buffers
+	cl_mem d_my_ap;
+	cl_mem d_p0,
 	d_p1, d_np, d_aopt, d_bopt, d_copt, d_dopt, d_eopt, d_stack, d_smax;
 	//Device output buffer
 	cl_mem d_out;
@@ -158,13 +160,13 @@ int main(int argc, char *argv[]) {
 	size_t bytes_out = sizeof(float) * outSize;
 
 	//Numero de workitems em cada local work group (local size)
-//    size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
-//
-//    size_t globalSize[3] = {
-//        ceil((float)np[0] / (float)localSize[0]),
-//        ceil((float)np[1] / (float)localSize[1]),
-//        ceil((float)np[2] / (float)localSize[2])
-//    };
+	//    size_t localSize[3] = {LOCALSIZE, LOCALSIZE, LOCALSIZE};
+	//
+	//    size_t globalSize[3] = {
+	//        ceil((float)np[0] / (float)localSize[0]),
+	//        ceil((float)np[1] / (float)localSize[1]),
+	//        ceil((float)np[2] / (float)localSize[2])
+	//    };
 
 	size_t localSize[3] = { 5, 5, 5 };
 
@@ -183,9 +185,18 @@ int main(int argc, char *argv[]) {
 
 	// Find first device that works
 	err = 1;
+
+	cl_device_type device_type_opencl;
+
+	if(device_type == 0) {
+		device_type_opencl = CL_DEVICE_TYPE_CPU;
+	} else {
+		device_type_opencl = CL_DEVICE_TYPE_GPU;
+	}
+
 	for (i = 0; i < platformCount && err != CL_SUCCESS; i++) {
 		// Get ID for the device (CL_DEVICE_TYPE_ALL, CL_DEVICE_TYPE_GPU, ...)
-		err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_CPU, 1, &device_id,
+		err = clGetDeviceIDs(platforms[i], device_type_opencl, 1, &device_id,
 				NULL);
 
 	}
@@ -217,8 +228,8 @@ int main(int argc, char *argv[]) {
 	// Create a command queue
 #ifdef CL_VERSION_2_0
 	cl_queue_properties queue_properties[] = {
-		CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
-		0};
+			CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
+			0};
 	queue = clCreateCommandQueueWithProperties(context, device_id,
 			queue_properties , &err);
 #else
