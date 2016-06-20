@@ -37,11 +37,13 @@ __kernel void calculate(
 	int np4 = np[4];
 
 	float d = p03 - mul_id;
-	float e = p04 - mul_ie;
+	float e;
 
 	for (int id = 0; id < np3; id++)
 	{
 		d += mul_id;
+		e = p04 - mul_ie;
+
 		for (int ie = 0; ie < np4; ie++)
 		{
 			e += mul_ie;

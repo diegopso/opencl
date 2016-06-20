@@ -4,23 +4,6 @@
 # define MAX(a, b) ((a)>(b)?(a):(b))
 #endif
 
-
-/* The moveout time function tells the time when a wave, propagating from
- * (m0,h0) at t0 to the tace */
-static float time_2d(float A, float B, float C, float D, float E, float t0,
-		float m0, float m, float h0, float h) {
-	float dm = m - m0;
-	float dh = h - h0;
-
-	float t2 = t0 + (A * dm) + (B * dh);
-	t2 = t2 * t2 + C * dh * dh + D * dm * dm + E * dh * dm;
-
-	if (t2 < 0)
-		return -1;
-	else
-		return sqrt(t2);
-}
-
 /*
  * This method computes how much the given parameters fit a collection of traces
  * from the aperture. The 'stack' is the average of the values from the traces
@@ -74,8 +57,20 @@ float my_semblance_2d(__global my_aperture_t *ap,
 		my = s * (tr->gy + tr->sy);
 		hy = s * (tr->gy - tr->sy);
 
+		float t;
+
 		/* Compute the moveout time ignoring mx and hx because the data is 2D */
-		float t = time_2d(A, B, C, D, E, t0, m0, my, h0, hy);
+		float dm = my - m0;
+		float dh = hy - h0;
+
+		float t2 = t0 + (A * dm) + (B * dh);
+		t2 = t2 * t2 + C * dh * dh + dm * (D * dm + E * dh);
+
+		if (t2 < 0)
+			t = -1;
+		else
+			t = sqrt(t2);
+
 		int it = (int)(t * idt);
 		float temp = t*idt - it;
 		int k = it - tau - 1;

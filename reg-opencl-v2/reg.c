@@ -405,14 +405,24 @@ int main(int argc, char *argv[]) {
 	clReleaseContext(context);
 
 	/*-------------------------------------------------------------------------*/
+/*
+	printf("A=%g\n", out[0]);
+			printf("B=%g\n", out[1]);
+			printf("C=%g\n", out[2]);
+			printf("D=%g\n", out[3]);
+			printf("E=%g\n", out[4]);
+			printf("Stack=%g\n", out[5]);
+			printf("Semblance=%g\n", out[6]);
+			printf("\n");
+			*/
 
-		printf("A=%g\n", out[0]);
-		printf("B=%g\n", out[1]);
-		printf("C=%g\n", out[2]);
-		printf("D=%g\n", out[3]);
-		printf("E=%g\n", out[4]);
-		printf("Stack=%g\n", out[5]);
-		printf("Semblance=%g\n", out[6]);
+		printf("%g\n", out[0]);
+		printf("%g\n", out[1]);
+		printf("%g\n", out[2]);
+		printf("%g\n", out[3]);
+		printf("%g\n", out[4]);
+		printf("%g\n", out[5]);
+		printf("%g\n", out[6]);
 		printf("\n");
 
 	return 0;

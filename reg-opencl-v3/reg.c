@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
 	err = clSetKernelArg(kernel, 14, sizeof(cl_mem), &d_smax); //smax
 	checkError(err, "setarg14");
 
-	for (int k = 0; k < 1; ++k) {
+	for (int k = 0; k < 10; ++k) {
 		size_t localSize[3] = {2, 2, 2};
 
 		size_t globalSize[3] = { 20, 20, 20 };
@@ -403,14 +403,22 @@ int main(int argc, char *argv[]) {
 	clReleaseContext(context);
 
 	/*-------------------------------------------------------------------------*/
-
-		printf("A=%g\n", out[0]);
-		printf("B=%g\n", out[1]);
-		printf("C=%g\n", out[2]);
-		printf("D=%g\n", out[3]);
-		printf("E=%g\n", out[4]);
-		printf("Stack=%g\n", out[5]);
-		printf("Semblance=%g\n", out[6]);
+ /*
+	printf("A=%g\n", out[0]);
+			printf("B=%g\n", out[1]);
+			printf("C=%g\n", out[2]);
+			printf("D=%g\n", out[3]);
+			printf("E=%g\n", out[4]);
+			printf("Stack=%g\n", out[5]);
+			printf("Semblance=%g\n", out[6]);
+*/
+		printf("%g\n", out[0]);
+		printf("%g\n", out[1]);
+		printf("%g\n", out[2]);
+		printf("%g\n", out[3]);
+		printf("%g\n", out[4]);
+		printf("%g\n", out[5]);
+		printf("%g\n", out[6]);
 		printf("\n");
 
 	return 0;
