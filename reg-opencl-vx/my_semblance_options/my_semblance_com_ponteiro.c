@@ -4,6 +4,48 @@
 # define MAX(a, b) ((a)>(b)?(a):(b))
 #endif
 
+static float my_get_scalco(__global my_su_trace_t *tr) {
+	if (tr->scalco == 0)
+		return 1;
+	if (tr->scalco > 0)
+		return tr->scalco;
+	return 1.0f / tr->scalco;
+}
+
+void my_su_get_midpoint(__global my_su_trace_t *tr, float *mx, float *my) {
+	float s = my_get_scalco(tr);
+	*mx = s * (tr->gx + tr->sx) * 0.5;
+	*my = s * (tr->gy + tr->sy) * 0.5;
+}
+
+void my_su_get_halfoffset(__global my_su_trace_t *tr, float *hx, float *hy) {
+	float s = my_get_scalco(tr);
+	*hx = s * (tr->gx - tr->sx) * 0.5;
+	*hy = s * (tr->gy - tr->sy) * 0.5;
+}
+
+float sqrtf(float x);
+
+/* The moveout time function tells the time when a wave, propagating from
+ * (m0,h0) at t0 to the tace */
+static float time_2d(float A, float B, float C, float D, float E, float t0,
+		float m0, float m, float h0, float h) {
+	float dm = m - m0;
+	float dh = h - h0;
+
+	float t2 = t0 + (A * dm) + (B * dh);
+	t2 = t2 * t2 + C * dh * dh + D * dm * dm + E * dh * dm;
+
+	if (t2 < 0)
+		return -1;
+	else
+		return sqrtf(t2);
+}
+
+float interpol_linear(float x0, float x1, float y0, float y1, float x) {
+	return (y1 - y0) * (x - x0) / (x1 - x0) + y0;
+}
+
 /*
  * This method computes how much the given parameters fit a collection of traces
  * from the aperture. The 'stack' is the average of the values from the traces
@@ -14,10 +56,12 @@ float my_semblance_2d(__global my_aperture_t *ap,
 		float t0, float m0, float h0,
 		float *stack)
 {
+    printf("inicio my_semblance\n");
 
 	/* Get the sample rate from the first trace inside the aperture,
 	 it is the same value for all other traces */
 	__global my_su_trace_t *tr = &ap->traces[0];
+	printf("my_tr: ", tr->dt);
 	float dt = (float) tr->dt / 1000000;
 	float idt = 1 / dt;
 
@@ -28,8 +72,8 @@ float my_semblance_2d(__global my_aperture_t *ap,
 
 	/* Calculate the semblance  */
 
-	float num[10];
-	float den[10];
+	float num[50];
+	float den[50];
 	for(int i=0;i<w;i++) {
 		num[i]=0;
 		den[i]=0;
@@ -43,54 +87,31 @@ float my_semblance_2d(__global my_aperture_t *ap,
 		tr = &ap->traces[i];
 
 		/* Get the trace coordinates in the midpoint and halfoffset spaces */
-		float my, hy;
-		float s;
-
-		if (tr->scalco == 0)
-			s = 1;
-		else if (tr->scalco > 0)
-			s = tr->scalco;
-		else
-			s = 1.0f / tr->scalco;
-
-		s = s * 0.5;
-		my = s * (tr->gy + tr->sy);
-		hy = s * (tr->gy - tr->sy);
-
-		float t;
+		float mx, my, hx, hy;
+		my_su_get_midpoint(tr, &mx, &my);
+		my_su_get_halfoffset(tr, &hx, &hy);
 
 		/* Compute the moveout time ignoring mx and hx because the data is 2D */
-		float dm = my - m0;
-		float dh = hy - h0;
-
-		float t2 = t0 + (A * dm) + (B * dh);
-		t2 = t2 * t2 + C * dh * dh + dm * (D * dm + E * dh);
-
-		if (t2 < 0)
-			t = -1;
-		else
-			t = sqrt(t2);
-
+		float t = time_2d(A, B, C, D, E, t0, m0, my, h0, hy);
 		int it = (int)(t * idt);
-		float temp = t*idt - it;
-		int k = it - tau - 1;
 
 		/* Check if the time belongs to the range of the trace */
 		if (it - tau >= 0 && it + tau < tr->ns) {
 			for (int j = 0; j < w; j++) {
-				k++;
-				float v = (tr->data[k+1] - tr->data[k]) * temp + tr->data[k];
-
+				int k = it + j - tau;
+				float v = interpol_linear(k, k+1,
+						tr->data[k], tr->data[k+1],
+						t*idt + j - tau);
 				num[j] += v;
 				den[j] += v*v;
 				_stack += v;
 			}
-
 			M++;
 		} else if (++skip == 2) {
 			/* Allow only one trace to be excluded from the semblance
 			 computation, otherwise the precision of the metric will
 			 be compromised */
+			printf("error\n");
 			goto error;
 		}
 	}
@@ -108,7 +129,7 @@ float my_semblance_2d(__global my_aperture_t *ap,
 	}
 
 	if (aux == 0)
-		return 0;
+	return 0;
 
 	return sem / aux / M;
 

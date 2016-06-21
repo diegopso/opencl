@@ -36,21 +36,17 @@ __kernel void calculate(
 	int np3 = np[3];
 	int np4 = np[4];
 
-	float d = p03 - mul_id;
+	float d = p03;
 	float e;
 
 	for (int id = 0; id < np3; id++)
 	{
-		d += mul_id;
-		e = p04 - mul_ie;
+		e = p04;
 
 		for (int ie = 0; ie < np4; ie++)
 		{
-			e += mul_ie;
 
 			float st;
-			/* Check the fit of the parameters to the data and update the
-			 * maximum for that point if necessary */
 			float s = my_semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
 
 			if (s > smax[ia])
@@ -63,7 +59,9 @@ __kernel void calculate(
 				_Dopt[ia] = d;
 				_Eopt[ia] = e;
 			}
+			e += mul_ie;
 		}
+		d += mul_id;
 	}
 
 	/* Now find the best fit between different 'A' values */

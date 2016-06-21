@@ -8,7 +8,6 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include my_semblance_options/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -26,19 +25,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: reg-opencl-v4
+all: reg-v1
 
 # Tool invocations
-reg-opencl-v4: $(OBJS) $(USER_OBJS)
+reg-v1: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross GCC Linker'
-	gcc  -o "reg-opencl-v4" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc  -o "reg-v1" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(CL_DEPS)$(EXECUTABLES)$(OBJS)$(C_DEPS) reg-opencl-v4
+	-$(RM) $(CL_DEPS)$(EXECUTABLES)$(OBJS)$(C_DEPS) reg-v1
 	-@echo ' '
 
 .PHONY: all clean dependents

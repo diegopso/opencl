@@ -3,13 +3,9 @@
 
 __kernel void calculate(
 		__global my_aperture_t *ap,
-		const float m0,
-		const float h0,
-		const float t0,
 		__global float *p0,
 		__global float *p1,
 		__global int *np,
-		__global float *out,
 
 		__global float *_Aopt,
 		__global float *_Bopt,
@@ -17,6 +13,10 @@ __kernel void calculate(
 		__global float *_Dopt,
 		__global float *_Eopt,
 		__global float *_stack,
+		__global float *out,
+		const float m0,
+		const float h0,
+		const float t0,
 		__global float *smax)
 {
 
@@ -28,65 +28,56 @@ __kernel void calculate(
 	float b = p0[1] + ((float)ib / (float)np[1]) * (p1[1]-p0[1]);
 	float c = p0[2] + ((float)ic / (float)np[2]) * (p1[2]-p0[2]);
 
-	float l_Aopt = 0;
-	float l_Bopt = 0;
-	float l_Copt = 0;
-	float l_Dopt = 0;
-	float l_Eopt = 0;
-	float l_stack = 0;
-	float l_smax = smax[ia];
+	float p03 = p0[3];
+	float mul_id = (p1[3] - p03 ) / (float)np[3];
+	float p04 = p0[4];
+	float mul_ie = (p1[4]-p0[4]) / (float)np[4];
 
-	for (int id = 0; id < np[3]; id++)
+	int np3 = np[3];
+	int np4 = np[4];
+
+	float d = p03;
+	float e;
+
+	for (int id = 0; id < np3; id++)
 	{
+		e = p04;
 
-		float d = p0[3] + ((float)id / (float)np[3])*(p1[3]-p0[3]);
-		for (int ie = 0; ie < np[4]; ie++)
+		for (int ie = 0; ie < np4; ie++)
 		{
-
-			float e = p0[4] + ((float)ie / (float)np[4])*(p1[4]-p0[4]);
 
 			float st;
-			/* Check the fit of the parameters to the data and update the
-			 * maximum for that point if necessary */
 			float s = my_semblance_2d(ap, a, b, c, d, e, t0, m0, h0, &st);
 
-			if (s > l_smax)
+			if (s > smax[ia])
 			{
-				l_Aopt = a;
-				l_Bopt = b;
-				l_Copt = c;
-				l_Dopt = d;
-				l_Eopt = e;
-				l_stack = st;
-				l_smax = s;
+				smax[ia] = s;
+				_stack[ia] = st;
+				_Aopt[ia] = a;
+				_Bopt[ia] = b;
+				_Copt[ia] = c;
+				_Dopt[ia] = d;
+				_Eopt[ia] = e;
 			}
+			e += mul_ie;
 		}
+		d += mul_id;
 	}
 
-	if(l_smax > smax[ia]) {
-		_Aopt[ia] = l_Aopt;
-		_Bopt[ia] = l_Bopt;
-		_Copt[ia] = l_Copt;
-		_Dopt[ia] = l_Dopt;
-		_Eopt[ia] = l_Eopt;
-		_stack[ia] = l_stack;
-		smax[ia] = l_smax;
-	}
-
-
+	/* Now find the best fit between different 'A' values */
 	float ssmax = -1.0;
-	for (int i = 0; i < np[0]; i ++)
+	for (int ia = 0; ia < np[0]; ia++)
 	{
-		if (smax[i] > ssmax)
+		if (smax[ia] > ssmax)
 		{
-			out[0] = _Aopt[i];
-			out[1] = _Bopt[i];
-			out[2] = _Copt[i];
-			out[3] = _Dopt[i];
-			out[4] = _Eopt[i];
-			out[5] = _stack[i];
-			out[6] = smax[i];
-			ssmax = smax[i];
+			out[0] = _Aopt[ia];
+			out[1] = _Bopt[ia];
+			out[2] = _Copt[ia];
+			out[3] = _Dopt[ia];
+			out[4] = _Eopt[ia];
+			out[5] = _stack[ia];
+			out[6] = smax[ia];
+			ssmax = smax[ia];
 		}
 	}
 }

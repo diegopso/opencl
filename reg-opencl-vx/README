@@ -1,3 +1,5 @@
+Código kernel adaptado para dados privados. Fazer teste na cpu.
+
 Execute these commands to test the program:
 
 	gcc -o build/reg reg.c -I. su.c  -lOpenCL -lm -std=gnu99 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE
