@@ -120,3 +120,58 @@ Device: Intel(R) HD Graphics
 2439.187
 2452.538
 ^C38.73
+
+
+
+
+[mo802e09@usa reg-opencl-v4]$ ./test-reg.sh 
+Test 1:
+
+kernel0.cl
+Device: Intel(R) Core(TM) i5-4590 CPU @ 3.30GHz 
+704.432
+713.190
+694.903
+704.995
+720.075
+^C4.31
+kernel1.cl
+Device: Intel(R) HD Graphics 
+732.589
+737.431
+735.275
+738.152
+738.780
+^C4.52
+
+Test 2:
+
+kernel0.cl
+Device: Intel(R) Core(TM) i5-4590 CPU @ 3.30GHz 
+2824.575
+^C3.54
+kernel1.cl
+Device: Intel(R) HD Graphics 
+2439.871
+2439.195
+2450.021
+2440.034
+2464.219
+2439.558
+2465.643
+2439.774
+^C31.36
+
+Test 3:
+
+kernel0.cl
+Device: Intel(R) Core(TM) i5-4590 CPU @ 3.30GHz 
+^C1.78
+kernel1.cl
+Device: Intel(R) HD Graphics 
+2441.272
+2439.692
+2454.447
+2439.673
+2439.725
+^C25.98
