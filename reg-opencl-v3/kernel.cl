@@ -3,13 +3,9 @@
 
 __kernel void calculate(
 		__global my_aperture_t *ap,
-		const float m0,
-		const float h0,
-		const float t0,
 		__global float *p0,
 		__global float *p1,
 		__global int *np,
-		__global float *out,
 
 		__global float *_Aopt,
 		__global float *_Bopt,
@@ -17,6 +13,10 @@ __kernel void calculate(
 		__global float *_Dopt,
 		__global float *_Eopt,
 		__global float *_stack,
+		__global float *out,
+		const float m0,
+		const float h0,
+		const float t0,
 		__global float *smax)
 {
 

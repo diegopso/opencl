@@ -5,7 +5,7 @@ typedef struct my_aperture my_aperture_t;
 typedef struct my_su_trace my_su_trace_t;
 
 #define TRACES_MAX_SIZE 116
-#define DATA_MAX_SIZE 1660
+#define DATA_MAX_SIZE 2502
 
 struct my_su_trace {
   float data[DATA_MAX_SIZE];

@@ -414,6 +414,15 @@ int main(int argc, char *argv[]) {
 	//	printf("Stack=%g\n", out[5]);
 	//	printf("Semblance=%g\n", out[6]);
 	//	printf("\n");
+	printf("\n");
+	printf("%g\n", out[0]);
+			printf("%g\n", out[1]);
+			printf("%g\n", out[2]);
+			printf("%g\n", out[3]);
+			printf("%g\n", out[4]);
+			printf("%g\n", out[5]);
+			printf("%g\n", out[6]);
+			printf("\n");
 
 	return 0;
 }

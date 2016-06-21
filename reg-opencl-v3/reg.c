@@ -16,11 +16,11 @@
 
 #include <su.h>
 
-#define MAXSOURCE 2048
+#define MAXSOURCE 8192
 #define MAX_DEVICE_NAME_SIZE 100
 #define LOCALSIZE 8
 
-#define DATA_SIZE 1660
+#define DATA_SIZE 2502
 
 void checkError(cl_int err, const char *operation);
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 	int i;
 
 	int n = 5;
-	int outSize = 7;
+	int outSize = 7*20;
 	/* A, B, C, D, E */
 	float p0[n], p1[n];
 	int np[n];
@@ -270,21 +270,16 @@ int main(int argc, char *argv[]) {
 	// Create the compute kernel in the program we wish to run
 
 	kernel = clCreateKernel(program, "calculate", &err);
+	checkError(err, "Error, could not create the kernel.");
 
-	if (err != CL_SUCCESS) {
-		printf("Error, could not create the kernel.");
-		exit(6);
-	}
-
-	float smax[np[0]];
+	float smax[20];
 	for (int i = 0; i < np[0]; i++) {
 		smax[i] = -1.0;
 	}
 	size_t bytes_smax = sizeof(float) * np[0];
 
 	// Create the input and output arrays in device memory for our calculation
-	d_my_ap = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_my_ap, NULL,
-			NULL);
+	d_my_ap = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_my_ap, NULL, NULL);
 	d_p0 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p0, NULL, NULL);
 	d_p1 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p1, NULL, NULL);
 	d_np = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_np, NULL, NULL);
@@ -309,46 +304,46 @@ int main(int argc, char *argv[]) {
 			NULL);
 	err |= clEnqueueWriteBuffer(queue, d_np, CL_TRUE, 0, bytes_np, np, 0, NULL,
 			NULL);
-	err |= clEnqueueWriteBuffer(queue, d_smax, CL_TRUE, 0, bytes_smax, smax, 0,
+	err |= clEnqueueWriteBuffer(queue, d_smax, CL_FALSE, 0, bytes_smax, smax, 0,
 			NULL, NULL);
 	checkError(err, "clEnqueueWriteBuffer");
 
 	//	err = clWaitForEvents(1, &event1);
 
 	// Set the arguments to our compute kernel
-	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_my_ap);
-	checkError(err, "setarg0");
 
-	err = clSetKernelArg(kernel, 1, sizeof(float), &m0);
+	err = clSetKernelArg(kernel, 0, sizeof(d_my_ap), &d_my_ap);
+	checkError(err, "setarg0");
+	err = clSetKernelArg(kernel, 11, sizeof(float), &m0);
 	checkError(err, "setarg1");
-	err = clSetKernelArg(kernel, 2, sizeof(float), &h0);
+	err = clSetKernelArg(kernel, 12, sizeof(float), &h0);
 	checkError(err, "setarg2");
-	err = clSetKernelArg(kernel, 3, sizeof(float), &t0);
+	err = clSetKernelArg(kernel, 13, sizeof(float), &t0);
 	checkError(err, "setarg3");
-	err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &d_p0);
+	err = clSetKernelArg(kernel, 1, sizeof(d_p0), &d_p0);
 	checkError(err, "setarg4");
-	err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &d_p1);
+	err = clSetKernelArg(kernel, 2, sizeof(d_p1), &d_p1);
 	checkError(err, "setarg5");
-	err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &d_np);
+	err = clSetKernelArg(kernel, 3, sizeof(d_np), &d_np);
 	checkError(err, "setarg6");
-	err = clSetKernelArg(kernel, 7, sizeof(cl_mem), &d_out);
+	err = clSetKernelArg(kernel, 10, sizeof(d_out), &d_out);
 	checkError(err, "setarg7");
-	err = clSetKernelArg(kernel, 8, sizeof(cl_mem), &d_aopt); //_Aopt
+	err = clSetKernelArg(kernel, 4, sizeof(d_aopt), &d_aopt); //_Aopt
 	checkError(err, "setarg8");
-	err = clSetKernelArg(kernel, 9, sizeof(cl_mem), &d_bopt); //_Bopt
+	err = clSetKernelArg(kernel, 5, sizeof(d_bopt), &d_bopt); //_Bopt
 	checkError(err, "setarg9");
-	err = clSetKernelArg(kernel, 10, sizeof(cl_mem), &d_copt); //_Copt
+	err = clSetKernelArg(kernel, 6, sizeof(d_copt), &d_copt); //_Copt
 	checkError(err, "setarg10");
-	err = clSetKernelArg(kernel, 11, sizeof(cl_mem), &d_dopt); //_Dopt
+	err = clSetKernelArg(kernel, 7, sizeof(d_dopt), &d_dopt); //_Dopt
 	checkError(err, "setarg11");
-	err = clSetKernelArg(kernel, 12, sizeof(cl_mem), &d_eopt); //_Eopt
+	err = clSetKernelArg(kernel, 8, sizeof(d_eopt), &d_eopt); //_Eopt
 	checkError(err, "setarg12");
-	err = clSetKernelArg(kernel, 13, sizeof(cl_mem), &d_stack); //_stack
+	err = clSetKernelArg(kernel, 9, sizeof(d_stack), &d_stack); //_stack
 	checkError(err, "setarg13");
-	err = clSetKernelArg(kernel, 14, sizeof(cl_mem), &d_smax); //smax
+	err = clSetKernelArg(kernel, 14, sizeof(d_smax), &d_smax); //smax
 	checkError(err, "setarg14");
 
-	for (int k = 0; k < 10; ++k) {
+//	for (int k = 0; k < 10; ++k) {
 		size_t localSize[3] = {2, 2, 2};
 
 		size_t globalSize[3] = { 20, 20, 20 };
@@ -383,8 +378,8 @@ int main(int argc, char *argv[]) {
 				&time_end, NULL);
 		total_time = time_end - time_start;
 		printf("%0.3f\n", (total_time / 1000000.0));
-	}
-
+//	}
+//
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
 	clReleaseMemObject(d_my_ap);
@@ -412,6 +407,7 @@ int main(int argc, char *argv[]) {
 			printf("Stack=%g\n", out[5]);
 			printf("Semblance=%g\n", out[6]);
 */
+	printf("--------------------\n");
 		printf("%g\n", out[0]);
 		printf("%g\n", out[1]);
 		printf("%g\n", out[2]);
