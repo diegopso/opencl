@@ -1,0 +1,122 @@
+[mo802e09@usa reg-opencl-v4]$ gcc -o build/reg reg.c -I. su.c  -lOpenCL -lm -std=gnu99 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE
+reg.c: In function ‘main’:
+reg.c:245:3: warning: ‘clCreateCommandQueue’ is deprecated (declared at /usr/include/CL/cl.h:1359) [-Wdeprecated-declarations]
+   queue = clCreateCommandQueue(context, device_id,
+   ^
+[mo802e09@usa reg-opencl-v4]$ ./test-reg.sh 
+Test 1:
+
+kernel0.cl
+Device: Intel(R) Core(TM) i5-4590 CPU @ 3.30GHz 
+688.732
+691.376
+693.200
+693.737
+696.039
+690.736
+697.175
+694.820
+696.563
+694.070
+--------------------
+0
+-0.00043
+8.8e-07
+5.32907e-15
+5.32907e-15
+0.589791
+0.997444
+
+7.16
+kernel1.cl
+Device: Intel(R) HD Graphics 
+736.967
+735.608
+742.074
+742.238
+737.560
+732.880
+738.360
+735.720
+743.847
+739.327
+--------------------
+0
+-0.00043
+8.8e-07
+5.32907e-15
+5.32907e-15
+0.589791
+0.997444
+
+7.52
+
+Test 2:
+
+kernel0.cl
+Device: Intel(R) Core(TM) i5-4590 CPU @ 3.30GHz 
+2816.988
+2816.362
+2818.885
+2822.716
+2823.561
+2852.653
+2963.665
+2815.311
+2817.783
+2817.753
+--------------------
+0.00011516
+-0.000194
+7.4e-07
+7e-10
+5.61e-08
+0.263432
+0.997844
+
+28.60
+kernel1.cl
+Device: Intel(R) HD Graphics 
+2440.047
+2439.274
+2439.312
+2439.436
+2453.451
+2439.953
+^C31.71
+
+Test 3:
+
+kernel0.cl
+Device: Intel(R) Core(TM) i5-4590 CPU @ 3.30GHz 
+2818.159
+2820.361
+2814.553
+2814.944
+2813.275
+2814.951
+2812.919
+2816.877
+2814.933
+2817.323
+--------------------
+-0.000147
+-0.000139
+5.096e-07
+3.882e-07
+-1.4404e-07
+0.129953
+0.990796
+
+28.37
+kernel1.cl
+Device: Intel(R) HD Graphics 
+2440.000
+2439.098
+2439.072
+2438.966
+2439.055
+2439.198
+2439.187
+2452.538
+^C38.73
