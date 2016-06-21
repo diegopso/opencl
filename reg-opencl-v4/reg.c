@@ -119,8 +119,16 @@ int main(int argc, char *argv[]) {
 	int device_type = atof(argv[21]);
 
 	char *kernelSource = (char *) malloc(MAXSOURCE * sizeof(char));
+//	char kernelName[20], num[2];
+//
+//	strcpy(kernelName, "kernel");
+//	sprintf(num, "%d", device_type);
+//	strcat(kernelName, num);
+//	strcat(kernelName, ".cl");
+//
+//	printf("%s\n", kernelName);
 
-	FILE * file = fopen("kernel.cl", "r");
+	FILE * file = fopen(kernelName, "r");
 	if(file == NULL) {
 		printf("Error: open the kernel file (kernel.cl)\n");
 		exit(1);
