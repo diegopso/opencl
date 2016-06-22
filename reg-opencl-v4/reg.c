@@ -351,41 +351,48 @@ int main(int argc, char *argv[]) {
 	err = clSetKernelArg(kernel, 14, sizeof(d_smax), &d_smax); //smax
 	checkError(err, "setarg14");
 
-	for (int k = 0; k < 10; ++k) {
-		size_t localSize[3] = {2, 2, 2};
+	int sizes[6] = {1,2,4,5,10,20};
+	for (int s = 0; s < 6; s++) {
+
+		printf("size: %d\n", sizes[s]);
+		size_t localSize[3] = {sizes[s], sizes[s], sizes[s]};
 
 		size_t globalSize[3] = { 20, 20, 20 };
 
-		cl_event event;
-		err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL,
-				(const size_t *) globalSize, (const size_t *) localSize, 0, NULL,
-				&event);
 
-		// Execute the kernel over the entire range of the data set
+		for (int k = 0; k < 5; ++k) {
 
-		checkError(err, "Error, could not enqueue commands.");
+			cl_event event;
+			err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL,
+					(const size_t *) globalSize, (const size_t *) localSize, 0, NULL,
+					&event);
 
-		clFlush(queue);
+			// Execute the kernel over the entire range of the data set
 
-		// Wait for the command queue to get serviced before reading back results
-		clFinish(queue);
+			checkError(err, "Error, could not enqueue commands.");
 
-		// Read the results from the device
-		clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL,
-				NULL);
+			clFlush(queue);
 
-		//profiling
-		//clWaitForEvents(1, &event);
+			// Wait for the command queue to get serviced before reading back results
+			clFinish(queue);
 
-		cl_ulong time_start, time_end;
-		double total_time;
+			// Read the results from the device
+			clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL,
+					NULL);
 
-		clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START,
-				sizeof(time_start), &time_start, NULL);
-		clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end),
-				&time_end, NULL);
-		total_time = time_end - time_start;
-		printf("%0.3f\n", (total_time / 1000000.0));
+			//profiling
+			//clWaitForEvents(1, &event);
+
+			cl_ulong time_start, time_end;
+			double total_time;
+
+			clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START,
+					sizeof(time_start), &time_start, NULL);
+			clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end),
+					&time_end, NULL);
+			total_time = time_end - time_start;
+			printf("%0.3f\n", (total_time / 1000000.0));
+		}
 	}
 //
 	clReleaseKernel(kernel);
