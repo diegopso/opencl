@@ -32,9 +32,10 @@ my_aperture_t transform(aperture_t ap) {
 	/* copy ap_t value */
 	my_ap.ap_t = ap.ap_t;
 
-	if(TRACES_MAX_SIZE < ap.traces.len) {
-		printf("Quantidade de traços excedida. Altere a variável TRACES_MAX_SIZE "
-				"no arquivo reg.c e my_semblance_kernel.h\n");
+	if (TRACES_MAX_SIZE < ap.traces.len) {
+		printf(
+				"Quantidade de traços excedida. Altere a variável TRACES_MAX_SIZE "
+						"no arquivo reg.c e my_semblance_kernel.h\n");
 		exit(1);
 	}
 
@@ -44,8 +45,9 @@ my_aperture_t transform(aperture_t ap) {
 		su_trace_t *tr = vector_get(ap.traces, i);
 		my_su_trace_t my_tr;
 
-		if(DATA_MAX_SIZE < tr->ns) {
-			printf("Quantidade de pontos excedida. Altere a variável DATA_MAX_SIZE "
+		if (DATA_MAX_SIZE < tr->ns) {
+			printf(
+					"Quantidade de pontos excedida. Altere a variável DATA_MAX_SIZE "
 							"no arquivo reg.c e my_semblance_kernel.h\n");
 			exit(1);
 		}
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]) {
 	int i;
 
 	int n = 5;
-	int outSize = 7*20;
+	int outSize = 7 * 20;
 	/* A, B, C, D, E */
 	float p0[n], p1[n];
 	int np[n];
@@ -123,7 +125,7 @@ int main(int argc, char *argv[]) {
 	ap.ap_t = tau;
 	vector_init(ap.traces);
 	for (int i = 0; i < traces.len; i++)
-		vector_push(ap.traces, &vector_get(traces, i));
+	vector_push(ap.traces, &vector_get(traces, i));
 
 	my_aperture_t my_ap = transform(ap);
 
@@ -139,10 +141,8 @@ int main(int argc, char *argv[]) {
 	strcat(kernelName, num);
 	strcat(kernelName, ".cl");
 
-	printf("%s\n", kernelName);
-
 	FILE * file = fopen(kernelName, "r");
-	if(file == NULL) {
+	if (file == NULL) {
 		printf("Error: open the kernel file (kernel.cl)\n");
 		exit(1);
 	}
@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
 
 	//Device input buffers
 	cl_mem d_my_ap;
-	cl_mem d_p0,
-	d_p1, d_np, d_aopt, d_bopt, d_copt, d_dopt, d_eopt, d_stack, d_smax;
+	cl_mem d_p0, d_p1, d_np, d_aopt, d_bopt, d_copt, d_dopt, d_eopt, d_stack,
+			d_smax;
 	//Device output buffer
 	cl_mem d_out;
 
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
 
 	cl_device_type device_type_opencl;
 
-	if(device_type == 0) {
+	if (device_type == 0) {
 		device_type_opencl = CL_DEVICE_TYPE_CPU;
 	} else {
 		device_type_opencl = CL_DEVICE_TYPE_GPU;
@@ -214,10 +214,10 @@ int main(int argc, char *argv[]) {
 
 	for (i = 0; i < platformCount && err != CL_SUCCESS; i++) {
 		// Get ID for the device (CL_DEVICE_TYPE_ALL, CL_DEVICE_TYPE_GPU, ...)
-		err = clGetDeviceIDs(platforms[i], device_type_opencl, 1, &device_id, NULL);
+		err = clGetDeviceIDs(platforms[i], device_type_opencl, 1, &device_id,
+				NULL);
 	}
 	checkError(err, "Error, could not find a valid device.");
-
 
 	err = clGetDeviceInfo(device_id, CL_DEVICE_NAME, MAX_DEVICE_NAME_SIZE,
 			deviceName, NULL);
@@ -228,25 +228,9 @@ int main(int argc, char *argv[]) {
 	context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
 	checkError(err, "Error, could not create the context.");
 
-	if(device_type == 0) {
-		// Create a command queue
-#ifdef CL_VERSION_2_0
-		cl_queue_properties queue_properties[] = {
-				CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE,
-				0};
-		queue = clCreateCommandQueueWithProperties(context, device_id,
-				queue_properties , &err);
-#else
-		queue = clCreateCommandQueue(context, device_id,
-				CL_QUEUE_PROFILING_ENABLE, &err);
-#endif
-
-
-	} else {
-
-		queue = clCreateCommandQueue(context, device_id,
-				CL_QUEUE_PROFILING_ENABLE, &err);
-	}
+	queue = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE,
+			&err);
+	checkError(err, "Error, could not create command queue.");
 
 	// Create the compute program from the source buffer
 	program = clCreateProgramWithSource(context, 1,
@@ -285,7 +269,8 @@ int main(int argc, char *argv[]) {
 	size_t bytes_smax = sizeof(float) * np[0];
 
 	// Create the input and output arrays in device memory for our calculation
-	d_my_ap = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_my_ap, NULL, NULL);
+	d_my_ap = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_my_ap, NULL,
+			NULL);
 	d_p0 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p0, NULL, NULL);
 	d_p1 = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_p1, NULL, NULL);
 	d_np = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes_np, NULL, NULL);
@@ -313,8 +298,6 @@ int main(int argc, char *argv[]) {
 	err |= clEnqueueWriteBuffer(queue, d_smax, CL_FALSE, 0, bytes_smax, smax, 0,
 			NULL, NULL);
 	checkError(err, "clEnqueueWriteBuffer");
-
-	//	err = clWaitForEvents(1, &event1);
 
 	// Set the arguments to our compute kernel
 
@@ -349,41 +332,31 @@ int main(int argc, char *argv[]) {
 	err = clSetKernelArg(kernel, 14, sizeof(d_smax), &d_smax); //smax
 	checkError(err, "setarg14");
 
-	int sizes[6] = {1,2,4,5,10,20};
-	for (int s = 0; s < 6; s++) {
+	size_t localSize[3] = { 2, 2, 2 };
+	size_t globalSize[3] = { 20, 20, 20 };
 
-		printf("size: %d\n", sizes[s]);
-		size_t localSize[3] = {sizes[s], sizes[s], sizes[s]};
+	cl_event event;
+	err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL,
+			(const size_t *) globalSize, (const size_t *) localSize, 0, NULL,
+			&event);
+	checkError(err, "Error, could not enqueue commands.");
 
-		size_t globalSize[3] = { 20, 20, 20 };
+	clFlush(queue);
 
+	// Wait for the command queue to get serviced before reading back results
+	clFinish(queue);
 
-		for (int k = 0; k < 10; ++k) {
+	// Read the results from the device
+	clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL,
+			NULL);
 
-			cl_event event;
-			err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL,
-					(const size_t *) globalSize, (const size_t *) localSize, 0, NULL,
-					&event);
-			checkError(err, "Error, could not enqueue commands.");
-
-			clFlush(queue);
-
-			// Wait for the command queue to get serviced before reading back results
-			clFinish(queue);
-
-			// Read the results from the device
-			clEnqueueReadBuffer(queue, d_out, CL_TRUE, 0, bytes_out, out, 0, NULL,
-					NULL);
-
-			//profiling
-			clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START,
-					sizeof(time_start), &time_start, NULL);
-			clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end),
-					&time_end, NULL);
-			total_time = time_end - time_start;
-			printf("%0.3f\n", (total_time / 1000000.0));
-		}
-	}
+	//profiling
+	clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START,
+			sizeof(time_start), &time_start, NULL);
+	clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end),
+			&time_end, NULL);
+	total_time = time_end - time_start;
+	printf("%0.3fms\n", (total_time / 1000000.0));
 
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
@@ -405,24 +378,14 @@ int main(int argc, char *argv[]) {
 	/*-------------------------------------------------------------------------*/
 	/*Imprimir resultado*/
 
- /*
-	printf("A=%g\n", out[0]);
-			printf("B=%g\n", out[1]);
-			printf("C=%g\n", out[2]);
-			printf("D=%g\n", out[3]);
-			printf("E=%g\n", out[4]);
-			printf("Stack=%g\n", out[5]);
-			printf("Semblance=%g\n", out[6]);
-*/
 	printf("--------------------\n");
-		printf("%g\n", out[0]);
-		printf("%g\n", out[1]);
-		printf("%g\n", out[2]);
-		printf("%g\n", out[3]);
-		printf("%g\n", out[4]);
-		printf("%g\n", out[5]);
-		printf("%g\n", out[6]);
-		printf("\n");
+	printf("A=%g\n", out[0]);
+	printf("B=%g\n", out[1]);
+	printf("C=%g\n", out[2]);
+	printf("D=%g\n", out[3]);
+	printf("E=%g\n", out[4]);
+	printf("Stack=%g\n", out[5]);
+	printf("Semblance=%g\n\n", out[6]);
 
 	return 0;
 }

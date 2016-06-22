@@ -1,13 +1,13 @@
 #!/bin/bash
-TIME=${TIME:-`which time` -f%e}
+#TIME=${TIME:-`which time` -f%e}
 DATA=${DATA:-simple-syntetic.cut44s.su}
 PROG=${PROG:-./build/reg}
 
 run(){
-#	for i in 0 1 2 3 4 5 6 7 8 9
-#	do
-		$TIME $PROG $ARGS $DATA $DEVICE_TYPE
-#	done
+	for i in 0 1 2 3 4
+	do
+		$PROG $ARGS $DATA $DEVICE_TYPE
+	done
 }
 
 
