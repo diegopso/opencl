@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 
 	struct timeval  tv1, tv2;
 
-	for(int i = 0; i < 10; i++) {
+	for(int i = 0; i < 1; i++) {
 		gettimeofday(&tv1, NULL);
 		compute_max(&ap, m0, h0, t0, p0, p1, np, &a, &b, &c, &d, &e, &sem, &stack);
 		gettimeofday(&tv2, NULL);
