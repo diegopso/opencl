@@ -358,7 +358,7 @@ int main(int argc, char *argv[]) {
 		size_t globalSize[3] = { 20, 20, 20 };
 
 
-		for (int k = 0; k < 5; ++k) {
+		for (int k = 0; k < 10; ++k) {
 
 			cl_event event;
 			err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL,
