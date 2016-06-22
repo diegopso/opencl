@@ -3,6 +3,9 @@
 #include <float.h>
 #include <math.h>
 
+#define TRACES_MAX_SIZE 116
+#define DATA_MAX_SIZE 2502
+
 #include <utils.h>
 #include <vector.h>
 #include <semblance.h>
@@ -20,8 +23,6 @@
 #define MAX_DEVICE_NAME_SIZE 100
 #define LOCALSIZE 8
 
-#define DATA_SIZE 2502
-
 void checkError(cl_int err, const char *operation);
 
 /*Transform aperture_t to my_aperture_t */
@@ -31,14 +32,26 @@ my_aperture_t transform(aperture_t ap) {
 	/* copy ap_t value */
 	my_ap.ap_t = ap.ap_t;
 
+	if(TRACES_MAX_SIZE < ap.traces.len) {
+		printf("Quantidade de traços excedida. Altere a variável TRACES_MAX_SIZE "
+				"no arquivo reg.c e my_semblance_kernel.h\n");
+		exit(1);
+	}
+
 	/* copy tr value */
 	for (int i = 0; i < ap.traces.len; i++) {
 
 		su_trace_t *tr = vector_get(ap.traces, i);
 		my_su_trace_t my_tr;
 
+		if(DATA_MAX_SIZE < tr->ns) {
+			printf("Quantidade de pontos excedida. Altere a variável DATA_MAX_SIZE "
+							"no arquivo reg.c e my_semblance_kernel.h\n");
+			exit(1);
+		}
+
 		/* copy tr data value */
-		for (int j = 0; j < DATA_SIZE; j++) {
+		for (int j = 0; j < DATA_MAX_SIZE; j++) {
 			my_tr.data[j] = tr->data[j];
 		}
 
@@ -156,6 +169,10 @@ int main(int argc, char *argv[]) {
 	cl_platform_id *platforms;
 	cl_uint platformCount;
 
+	//variáveis de profile
+	cl_ulong time_start, time_end;
+	double total_time;
+
 	//Tamanho em bytes de cada vetor
 	size_t bytes_my_ap = sizeof(my_aperture_t);
 	size_t bytes_p0 = sizeof(float) * n;
@@ -197,34 +214,19 @@ int main(int argc, char *argv[]) {
 
 	for (i = 0; i < platformCount && err != CL_SUCCESS; i++) {
 		// Get ID for the device (CL_DEVICE_TYPE_ALL, CL_DEVICE_TYPE_GPU, ...)
-		err = clGetDeviceIDs(platforms[i], device_type_opencl, 1, &device_id,
-				NULL);
-
+		err = clGetDeviceIDs(platforms[i], device_type_opencl, 1, &device_id, NULL);
 	}
+	checkError(err, "Error, could not find a valid device.");
 
-	checkError(err, "get device");
-
-	if (err != CL_SUCCESS) {
-		printf("Error, could not find a valid device.");
-		exit(3);
-	}
 
 	err = clGetDeviceInfo(device_id, CL_DEVICE_NAME, MAX_DEVICE_NAME_SIZE,
 			deviceName, NULL);
+	checkError(err, "Error, could not read the info for device.");
 	printf("Device: %s \n", deviceName);
-
-	if (err != CL_SUCCESS) {
-		printf("Error, could not read the info for device.");
-		exit(4);
-	}
 
 	// Create a context
 	context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
-
-	if (err != CL_SUCCESS) {
-		printf("Error, could not create the context.");
-		exit(5);
-	}
+	checkError(err, "Error, could not create the context.");
 
 	if(device_type == 0) {
 		// Create a command queue
@@ -249,11 +251,7 @@ int main(int argc, char *argv[]) {
 	// Create the compute program from the source buffer
 	program = clCreateProgramWithSource(context, 1,
 			(const char **) &kernelSource, (const size_t *) &source_size, &err);
-
-	if (err != CL_SUCCESS) {
-		printf("Error, could not create program with source.");
-		exit(6);
-	}
+	checkError(err, "Error, could not create program with source.");
 
 	// Build the program executable " --disable-multilib "
 	err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
@@ -322,31 +320,31 @@ int main(int argc, char *argv[]) {
 
 	err = clSetKernelArg(kernel, 0, sizeof(d_my_ap), &d_my_ap);
 	checkError(err, "setarg0");
-	err = clSetKernelArg(kernel, 11, sizeof(float), &m0);
-	checkError(err, "setarg1");
-	err = clSetKernelArg(kernel, 12, sizeof(float), &h0);
-	checkError(err, "setarg2");
-	err = clSetKernelArg(kernel, 13, sizeof(float), &t0);
-	checkError(err, "setarg3");
 	err = clSetKernelArg(kernel, 1, sizeof(d_p0), &d_p0);
-	checkError(err, "setarg4");
+	checkError(err, "setarg1");
 	err = clSetKernelArg(kernel, 2, sizeof(d_p1), &d_p1);
-	checkError(err, "setarg5");
+	checkError(err, "setarg2");
 	err = clSetKernelArg(kernel, 3, sizeof(d_np), &d_np);
-	checkError(err, "setarg6");
-	err = clSetKernelArg(kernel, 10, sizeof(d_out), &d_out);
-	checkError(err, "setarg7");
+	checkError(err, "setarg3");
 	err = clSetKernelArg(kernel, 4, sizeof(d_aopt), &d_aopt); //_Aopt
-	checkError(err, "setarg8");
+	checkError(err, "setarg4");
 	err = clSetKernelArg(kernel, 5, sizeof(d_bopt), &d_bopt); //_Bopt
-	checkError(err, "setarg9");
+	checkError(err, "setarg5");
 	err = clSetKernelArg(kernel, 6, sizeof(d_copt), &d_copt); //_Copt
-	checkError(err, "setarg10");
+	checkError(err, "setarg6");
 	err = clSetKernelArg(kernel, 7, sizeof(d_dopt), &d_dopt); //_Dopt
-	checkError(err, "setarg11");
+	checkError(err, "setarg7");
 	err = clSetKernelArg(kernel, 8, sizeof(d_eopt), &d_eopt); //_Eopt
-	checkError(err, "setarg12");
+	checkError(err, "setarg8");
 	err = clSetKernelArg(kernel, 9, sizeof(d_stack), &d_stack); //_stack
+	checkError(err, "setarg9");
+	err = clSetKernelArg(kernel, 10, sizeof(d_out), &d_out);
+	checkError(err, "setarg10");
+	err = clSetKernelArg(kernel, 11, sizeof(float), &m0);
+	checkError(err, "setarg11");
+	err = clSetKernelArg(kernel, 12, sizeof(float), &h0);
+	checkError(err, "setarg12");
+	err = clSetKernelArg(kernel, 13, sizeof(float), &t0);
 	checkError(err, "setarg13");
 	err = clSetKernelArg(kernel, 14, sizeof(d_smax), &d_smax); //smax
 	checkError(err, "setarg14");
@@ -366,9 +364,6 @@ int main(int argc, char *argv[]) {
 			err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL,
 					(const size_t *) globalSize, (const size_t *) localSize, 0, NULL,
 					&event);
-
-			// Execute the kernel over the entire range of the data set
-
 			checkError(err, "Error, could not enqueue commands.");
 
 			clFlush(queue);
@@ -381,11 +376,6 @@ int main(int argc, char *argv[]) {
 					NULL);
 
 			//profiling
-			//clWaitForEvents(1, &event);
-
-			cl_ulong time_start, time_end;
-			double total_time;
-
 			clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START,
 					sizeof(time_start), &time_start, NULL);
 			clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end),
@@ -394,7 +384,7 @@ int main(int argc, char *argv[]) {
 			printf("%0.3f\n", (total_time / 1000000.0));
 		}
 	}
-//
+
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
 	clReleaseMemObject(d_my_ap);
@@ -413,6 +403,8 @@ int main(int argc, char *argv[]) {
 	clReleaseContext(context);
 
 	/*-------------------------------------------------------------------------*/
+	/*Imprimir resultado*/
+
  /*
 	printf("A=%g\n", out[0]);
 			printf("B=%g\n", out[1]);
