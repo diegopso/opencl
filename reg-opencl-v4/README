@@ -4,5 +4,14 @@ Execute these commands to test the program:
 	./test-reg.sh 
     
 
+Como gerar o executável?
+
+
+Como alterar os dados de entrada?
+
+
+Como alterar a quantidade de repetições?
+
+
 The expected results for the parameters, semblance 
 and stack are located in expected.out
