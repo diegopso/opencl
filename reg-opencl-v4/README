@@ -1,17 +1,16 @@
-Execute these commands to test the program:
-
-	gcc -o build/reg reg.c -I. su.c  -lOpenCL -lm -std=gnu99 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE
-	./test-reg.sh 
-    
-
 Como gerar o executável?
+Execute o comando abaixo:
+$ make
 
+Como executar o programa? 
+Execute o comando abaixo:
+$ ./test-reg.sh 
 
 Como alterar os dados de entrada?
-
+Os dados de entrada estão no arquivo test-reg.sh
 
 Como alterar a quantidade de repetições?
-
+Altere o parâmetro do for na função run no arquivo test-reg.sh
 
 The expected results for the parameters, semblance 
 and stack are located in expected.out
